@@ -52,7 +52,7 @@ export function ClientDashboard() {
             <div className="space-y-1">
               <CardTitle className="flex items-center gap-2">
                 <Wallet className="size-4" />
-                Dashboard del cliente
+                Panel del cliente
               </CardTitle>
               <CardDescription>
                 Resumen operativo calculado sobre `wallets`, `ledger_entries`,
@@ -67,17 +67,17 @@ export function ClientDashboard() {
           <CardContent className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <QuickAction
-                href="/pagos?action=send"
+                href="/enviar"
                 icon={ArrowRightLeft}
                 title="Enviar pago"
                 description="Ir al módulo de pagos para iniciar un expediente."
                 disabled={!canOperate}
               />
               <QuickAction
-                href="/pagos?action=fund"
+                href="/depositar"
                 icon={PlusCircle}
                 title="Agregar fondos"
-                description="Abrir pagos con foco en fondeo hacia la wallet."
+                description="Abrir la seccion de depositos con foco en fondeo hacia la wallet."
                 disabled={!canOperate}
               />
             </div>
@@ -207,3 +207,4 @@ function Metric({ label, value }: { label: string; value: string }) {
     </div>
   )
 }
+

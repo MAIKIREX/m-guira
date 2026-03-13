@@ -39,6 +39,7 @@ interface CreatePaymentOrderFormProps {
   userId: string
   suppliers: Supplier[]
   defaultRoute: SupportedPaymentRoute
+  allowedRoutes?: SupportedPaymentRoute[]
   disabled?: boolean
   onCreateOrder: (input: CreatePaymentOrderInput, supportFile?: File | null) => Promise<void>
 }
@@ -78,13 +79,20 @@ export function CreatePaymentOrderForm({
   userId,
   suppliers,
   defaultRoute,
+  allowedRoutes,
   disabled,
   onCreateOrder,
 }: CreatePaymentOrderFormProps) {
   const [supportFile, setSupportFile] = useState<File | null>(null)
+  const routeOptions = useMemo(
+    () => supportedPaymentRoutes.filter((entry) => !allowedRoutes || allowedRoutes.includes(entry.key)),
+    [allowedRoutes]
+  )
+  const resolvedDefaultRoute = routeOptions.some((entry) => entry.key === defaultRoute) ? defaultRoute : routeOptions[0]?.key ?? supportedPaymentRoutes[0].key
+
   const form = useForm<PaymentOrderFormValues>({
     resolver: zodResolver(paymentOrderSchema),
-    defaultValues: getDefaultValues(defaultRoute),
+    defaultValues: getDefaultValues(resolvedDefaultRoute),
   })
 
   const route = useWatch({ control: form.control, name: 'route' })
@@ -95,13 +103,13 @@ export function CreatePaymentOrderForm({
   const exchangeRateApplied = useWatch({ control: form.control, name: 'exchange_rate_applied' })
 
   const currentRoute = useMemo(
-    () => supportedPaymentRoutes.find((entry) => entry.key === route) ?? supportedPaymentRoutes[0],
-    [route]
+    () => routeOptions.find((entry) => entry.key === route) ?? routeOptions[0] ?? supportedPaymentRoutes[0],
+    [route, routeOptions]
   )
 
   useEffect(() => {
-    form.reset(getDefaultValues(defaultRoute))
-  }, [defaultRoute, form])
+    form.reset(getDefaultValues(resolvedDefaultRoute))
+  }, [form, resolvedDefaultRoute])
 
   useEffect(() => {
     if (!currentRoute.supportedDeliveryMethods.includes(form.getValues('delivery_method'))) {
@@ -172,7 +180,7 @@ export function CreatePaymentOrderForm({
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {supportedPaymentRoutes.map((entry) => (
+                              {routeOptions.map((entry) => (
                                 <SelectItem key={entry.key} value={entry.key}>
                                   {entry.label}
                                 </SelectItem>

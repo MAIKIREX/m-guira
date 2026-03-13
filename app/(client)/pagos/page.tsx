@@ -1,5 +1,5 @@
-import { PaymentsPanel } from '@/features/payments/components/payments-panel'
+import { redirect } from 'next/navigation'
 
 export default function PaymentsPage() {
-  return <PaymentsPanel />
+  redirect('/transacciones')
 }

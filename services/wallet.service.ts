@@ -76,17 +76,18 @@ export const WalletService = {
     )
 
     const ledgerBalance = ledgerEntries.reduce((total, entry) => {
-      const signedAmount = entry.type === 'deposit' ? entry.amount : -entry.amount
+      const amount = Number(entry.amount)
+      const signedAmount = entry.type === 'deposit' ? amount : -amount
       return total + signedAmount
     }, 0)
 
     const reservedInOrders = activePaymentOrders.reduce(
-      (total, order) => total + order.amount_origin,
+      (total, order) => total + Number(order.amount_origin),
       0
     )
 
     const pendingBridgeTotal = pendingBridgeTransfers.reduce(
-      (total, transfer) => total + transfer.amount,
+      (total, transfer) => total + Number(transfer.amount),
       0
     )
 

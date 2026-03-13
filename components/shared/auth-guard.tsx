@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/browser'
 import { useAuthStore } from '@/stores/auth-store'
@@ -10,29 +10,40 @@ import type { Profile } from '@/types/profile'
 import type { Session, AuthChangeEvent, User } from '@supabase/supabase-js'
 
 const PUBLIC_PATHS = ['/login', '/registro', '/recuperar']
-const CLIENT_PATHS = ['/panel', '/pagos', '/actividad', '/soporte', '/onboarding']
+const CLIENT_PATHS = ['/panel', '/depositar', '/enviar', '/proveedores', '/transacciones', '/configuracion', '/pagos', '/actividad', '/soporte', '/onboarding']
 const STAFF_PATHS = ['/admin', '/auditoria']
-const SESSION_TIMEOUT_MS = 12000
-const PROFILE_RETRY_DELAYS_MS = [0, 400, 1200]
+const PROFILE_RETRY_DELAYS_MS = [0, 400, 1200, 2400]
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const [loading, setLoading] = useState(true)
+  const bootstrappedRef = useRef(false)
+  const [initDone, setInitDone] = useState(false)
 
-  const { setSession, setUser } = useAuthStore()
-  const { setProfile } = useProfileStore()
+  const { session: storedSession, setSession, setUser } = useAuthStore()
+  const { profile: storedProfile, setProfile } = useProfileStore()
   const supabase = useMemo(() => createClient(), [])
   const publicPath = isPublicPath(pathname)
 
+  // Usamos refs para evitar loops en los efectos
+  const storedProfileRef = useRef(storedProfile)
+  useEffect(() => { storedProfileRef.current = storedProfile }, [storedProfile])
+
+  // 1. Efecto para inicializar Auth (solo al montar o si cambia el pathname radicalmente)
   useEffect(() => {
     let mounted = true
 
-    async function initProtectedAuth() {
+    async function checkAuth() {
+      // No reseteamos loading si ya estamos en una ruta privada y tenemos perfil
+      // Solo mostramos cargando si es el bootstrap inicial o si no tenemos sesión
+      if (!bootstrappedRef.current) {
+        setLoading(true)
+      }
+
       try {
-        const {
-          data: { session },
-        } = await withTimeout(supabase.auth.getSession(), SESSION_TIMEOUT_MS, 'Tiempo de espera agotado al leer la sesion.')
+        console.log('AuthGuard: checking auth for', pathname)
+        const { data: { session } } = await supabase.auth.getSession()
 
         if (!mounted) return
 
@@ -40,66 +51,90 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
           setSession(null)
           setUser(null)
           setProfile(null)
-          router.push('/login')
+          if (!publicPath) {
+            router.push('/login')
+          }
+          setLoading(false)
+          bootstrappedRef.current = true
           return
         }
 
-        await applyAuthenticatedState({ pathname, router, session, setProfile, setSession, setUser, supabase })
+        setSession(session)
+        setUser(session.user)
+
+        // Si ya tenemos el perfil en store y coincide con el usuario, evitamos fetch
+        if (storedProfileRef.current && storedProfileRef.current.id === session.user.id) {
+          await handleRedirect(session, storedProfileRef.current)
+        } else {
+          const profile = await getProfileWithRetry(session.user.id)
+          if (mounted) {
+            if (profile) {
+              setProfile(profile)
+              await handleRedirect(session, profile)
+            } else {
+              // Si no hay perfil, forzamos logout
+              await supabase.auth.signOut()
+              router.push('/login')
+            }
+          }
+        }
       } catch (error) {
-        console.error('Error initializing auth', error instanceof Error ? error.message : error)
-        if (!mounted) return
-        setSession(null)
-        setUser(null)
-        setProfile(null)
-        router.push('/login')
+        console.error('AuthGuard: init error', error)
       } finally {
-        if (mounted) setLoading(false)
+        if (mounted) {
+          setLoading(false)
+          bootstrappedRef.current = true
+          setInitDone(true)
+        }
       }
     }
 
-    if (publicPath) {
-      setLoading(false)
-      return () => {
-        mounted = false
+    async function handleRedirect(session: any, profile: Profile) {
+      const dest = await resolveRedirect({
+        pathname,
+        profile,
+        onArchived: async () => {
+          await supabase.auth.signOut()
+          setSession(null)
+          setUser(null)
+          setProfile(null)
+        }
+      })
+      if (dest && dest !== pathname) {
+        router.push(dest)
       }
     }
 
-    initProtectedAuth()
+    checkAuth()
 
-    return () => {
-      mounted = false
-    }
-  }, [pathname, publicPath, router, setProfile, setSession, setUser, supabase])
+    return () => { mounted = false }
+  }, [pathname, publicPath, supabase, router, setProfile, setSession, setUser])
 
+  // 2. Efecto para escuchar cambios de auth (solo una vez al montar)
   useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
+      console.log('AuthGuard: onAuthStateChange', event)
       if (event === 'SIGNED_OUT') {
         setSession(null)
         setUser(null)
         setProfile(null)
         router.push('/login')
-        return
-      }
-
-      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') && session) {
-        try {
-          await applyAuthenticatedState({ pathname, router, session, setProfile, setSession, setUser, supabase })
-        } catch (error) {
-          console.error('Error loading profile after auth change', error instanceof Error ? error.message : error)
-          setProfile(null)
-        }
+      } else if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+        setSession(session)
+        setUser(session.user)
+        // El efecto de path se encargará de cargar el perfil si es necesario
       }
     })
-
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [pathname, router, setProfile, setSession, setUser, supabase])
+    return () => subscription.unsubscribe()
+  }, [supabase, router, setProfile, setSession, setUser])
 
   if (loading && !publicPath) {
-    return <div className="min-h-screen flex items-center justify-center">Cargando...</div>
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
+        <div className="size-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+        <p className="text-sm font-medium animate-pulse">Cargando aplicación...</p>
+      </div>
+    )
   }
 
   return <>{children}</>
@@ -122,12 +157,16 @@ async function applyAuthenticatedState({
   setUser: (user: User | null) => void
   supabase: ReturnType<typeof createClient>
 }) {
+  console.log('AuthGuard: applyAuthenticatedState starting', session.user.id)
   setSession(session)
   setUser(session.user)
 
+  console.log('AuthGuard: fetching profile...')
   const profile = await getProfileWithRetry(session.user.id)
+  console.log('AuthGuard: profile result', profile?.id)
 
   if (!profile) {
+    console.log('AuthGuard: no profile found, signing out')
     await supabase.auth.signOut()
     setSession(null)
     setUser(null)
@@ -142,14 +181,16 @@ async function applyAuthenticatedState({
     pathname,
     profile,
     onArchived: async () => {
+      console.log('AuthGuard: profile archived in resolveRedirect')
       await supabase.auth.signOut()
       setSession(null)
       setUser(null)
       setProfile(null)
     },
   })
-
+  
   if (destination && destination !== pathname) {
+    console.log('AuthGuard: redirecting to', destination)
     router.push(destination)
   }
 }
@@ -157,15 +198,23 @@ async function applyAuthenticatedState({
 async function getProfileWithRetry(userId: string) {
   let lastError: unknown = null
 
-  for (const delayMs of PROFILE_RETRY_DELAYS_MS) {
+  for (let i = 0; i < PROFILE_RETRY_DELAYS_MS.length; i++) {
+    const delayMs = PROFILE_RETRY_DELAYS_MS[i]
     if (delayMs > 0) {
+      console.log(`AuthGuard: retry ${i} in ${delayMs}ms`)
       await sleep(delayMs)
     }
 
     try {
+      console.log(`AuthGuard: getProfile attempt ${i}`)
       const profile = await ProfileService.getProfile(userId)
-      if (profile) return profile
+      if (profile) {
+        console.log('AuthGuard: profile found on attempt', i)
+        return profile
+      }
+      console.log(`AuthGuard: profile not found on attempt ${i}`)
     } catch (error) {
+      console.error(`AuthGuard: error on attempt ${i}`, error)
       lastError = error
     }
   }
@@ -230,15 +279,6 @@ async function resolveRedirect({
   }
 
   return null
-}
-
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string) {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) => {
-      setTimeout(() => reject(new Error(message)), timeoutMs)
-    }),
-  ])
 }
 
 function sleep(ms: number) {

@@ -1,19 +1,22 @@
 import { createClient } from '@/lib/supabase/browser'
 
-const supabase = createClient()
-
 export const AuthService = {
   async getSession() {
+    const supabase = createClient()
     return supabase.auth.getSession()
   },
 
   async login({ email, password }: { email: string; password: string; [key: string]: unknown }) {
+    const supabase = createClient()
+    // Probamos primero con el login nativo para evitar demoras/hangs potenciales en el proxy
+    // Si necesitas auditoría mas adelante se puede re-habilitar el proxy con timeout
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
     return data.session
   },
 
   async loginWithGoogle() {
+    const supabase = createClient()
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -25,6 +28,7 @@ export const AuthService = {
   },
 
   async signup({ email, password, fullName }: { email: string; password: string; fullName: string; [key: string]: unknown }) {
+    const supabase = createClient()
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -39,11 +43,13 @@ export const AuthService = {
   },
 
   async logout() {
+    const supabase = createClient()
     const { error } = await supabase.auth.signOut()
     if (error) throw error
   },
 
   async checkUserExists(email: string): Promise<boolean> {
+    const supabase = createClient()
     const { data, error } = await supabase.rpc('check_user_exists', { p_email: email })
     if (error) throw error
     return Boolean(data)
@@ -55,6 +61,7 @@ export const AuthService = {
       throw new Error('No existe una cuenta con este correo')
     }
 
+    const supabase = createClient()
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/recuperar/update`,
     })
@@ -62,6 +69,7 @@ export const AuthService = {
   },
 
   async updatePassword(password: string) {
+    const supabase = createClient()
     const { error } = await supabase.auth.updateUser({ password })
     if (error) throw error
   },

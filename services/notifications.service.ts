@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/browser'
+﻿import { createClient } from '@/lib/supabase/browser'
 import { Notification } from '@/types/notification'
 
 export const NotificationsService = {
@@ -38,8 +38,8 @@ export const NotificationsService = {
 
   subscribe(userId: string, onInsert: (payload: Notification) => void) {
     const supabase = createClient()
-    const channel = supabase.channel('realtime:notifications')
-    
+    const channel = supabase.channel(`notifications:${userId}`)
+
     channel
       .on(
         'postgres_changes',
@@ -47,16 +47,22 @@ export const NotificationsService = {
           event: 'INSERT',
           schema: 'public',
           table: 'notifications',
-          filter: `user_id=eq.${userId}`
+          filter: `user_id=eq.${userId}`,
         },
         (payload) => {
           onInsert(payload.new as Notification)
         }
       )
-      .subscribe()
-      
+      .subscribe((status, error) => {
+        if (status === 'CHANNEL_ERROR') {
+          console.error('Notifications realtime channel error', error)
+        }
+      })
+
     return () => {
-      supabase.removeChannel(channel)
+      void channel.unsubscribe().catch((error) => {
+        console.error('Failed to unsubscribe notifications channel', error)
+      })
     }
-  }
+  },
 }
