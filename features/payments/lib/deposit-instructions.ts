@@ -21,29 +21,52 @@ export interface RouteEstimate {
 export function estimateRouteValues(args: {
   amountOrigin: number
   route: SupportedPaymentRoute
+  originCurrency: string
+  destinationCurrency: string
   appSettings: AppSettingRow[]
   feesConfig: FeeConfigRow[]
 }) {
   const amountOrigin = Number.isFinite(args.amountOrigin) ? args.amountOrigin : 0
-  const baseRate = findNumericSetting(args.appSettings, 'bolivia_exchange_rate') ?? 6.96
+
+  // 1. Obtener tasas de configuracion (con fallback a la tasa antigua bolivia_exchange_rate o 6.96)
+  const legacyRate = findNumericSetting(args.appSettings, 'bolivia_exchange_rate') ?? 6.96
+  const parallelBuyRate = findNumericSetting(args.appSettings, 'parallel_buy_rate') ?? legacyRate
+  const parallelSellRate = findNumericSetting(args.appSettings, 'parallel_sell_rate') ?? legacyRate
+
   const baseFee = findFirstFee(args.feesConfig)
+
+  // 2. Determinar que tasa base aplicar segun la direccion de la operacion
+  // bo_to_world -> compra de dolares -> parallel_buy_rate
+  // world_to_bo -> venta de dolares -> parallel_sell_rate
+  let selectedBaseRate = legacyRate
+  if (args.route === 'bolivia_to_exterior') {
+    selectedBaseRate = parallelBuyRate
+  } else if (args.route === 'us_to_bolivia') {
+    selectedBaseRate = parallelSellRate
+  }
+
+  const effectiveRate = resolveExchangeRate({
+    baseRate: selectedBaseRate,
+    originCurrency: args.originCurrency,
+    destinationCurrency: args.destinationCurrency,
+  })
 
   if (args.route === 'bolivia_to_exterior') {
     const feeTotal = baseFee
-    const amountConverted = Math.max((amountOrigin - feeTotal) / baseRate, 0)
+    const amountConverted = Math.max((amountOrigin - feeTotal) * effectiveRate, 0)
     return toEstimate({
       amountConverted,
-      exchangeRateApplied: baseRate,
+      exchangeRateApplied: effectiveRate,
       feeTotal,
     })
   }
 
   if (args.route === 'us_to_bolivia') {
     const feeTotal = baseFee
-    const amountConverted = Math.max((amountOrigin - feeTotal) * baseRate, 0)
+    const amountConverted = Math.max((amountOrigin - feeTotal) * effectiveRate, 0)
     return toEstimate({
       amountConverted,
-      exchangeRateApplied: baseRate,
+      exchangeRateApplied: effectiveRate,
       feeTotal,
     })
   }
@@ -181,8 +204,22 @@ function readString(record: Record<string, unknown>, keys: string[]) {
 }
 
 function findNumericSetting(settings: AppSettingRow[], key: string) {
-  const match = settings.find((setting) => setting.key === key || setting.name === key)
-  return typeof match?.value === 'number' ? match.value : null
+  const normalizedKey = key.trim().toLowerCase()
+  const match = settings.find((setting) => {
+    const sKey = (setting.key || setting.name || '').trim().toLowerCase()
+    return sKey === normalizedKey
+  })
+
+  if (typeof match?.value === 'number') {
+    return Number.isFinite(match.value) ? match.value : null
+  }
+
+  if (typeof match?.value === 'string') {
+    const parsed = Number(match.value.trim().replace(',', '.'))
+    return Number.isFinite(parsed) ? parsed : null
+  }
+
+  return null
 }
 
 function findFirstFee(fees: FeeConfigRow[]) {
@@ -200,4 +237,27 @@ function toEstimate(values: RouteEstimate) {
 
 function roundTwo(value: number) {
   return Math.round(value * 100) / 100
+}
+
+function resolveExchangeRate(args: {
+  baseRate: number
+  originCurrency: string
+  destinationCurrency: string
+}) {
+  const origin = args.originCurrency.trim().toUpperCase()
+  const destination = args.destinationCurrency.trim().toUpperCase()
+
+  if (!origin || !destination || origin === destination) {
+    return 1
+  }
+
+  if (origin === 'USD' && destination === 'BS') {
+    return args.baseRate
+  }
+
+  if (origin === 'BS' && destination === 'USD') {
+    return args.baseRate === 0 ? 0 : 1 / args.baseRate
+  }
+
+  return 1
 }

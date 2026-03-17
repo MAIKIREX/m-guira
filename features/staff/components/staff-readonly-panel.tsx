@@ -603,55 +603,122 @@ function ConfigPanel({
 }) {
   return (
     <div className="grid gap-6 xl:grid-cols-2">
-      <Card>
-        <CardHeader>
-          <CardTitle>Fees config</CardTitle>
-          <CardDescription>Ajustes documentados sobre `route_creation` y `supplier_payment`.</CardDescription>
+      {/* Fees Configuration Card */}
+      <Card className="border-border/60 bg-background/95 shadow-sm overflow-hidden">
+        <CardHeader className="border-b border-border/40 pb-6">
+          <div className="flex items-center gap-3">
+            <div className="size-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600">
+              <CircleDollarSign className="size-5" />
+            </div>
+            <div className="space-y-1">
+              <CardTitle className="text-lg font-bold tracking-tight">Estructura de Comisiones</CardTitle>
+              <CardDescription className="text-[13px]">
+                Configuración de tasas para creación de rutas y pagos a proveedores.
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {!isAdmin ? <AdminOnlyNotice /> : null}
-          {feesConfig.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border/70 p-6 text-sm text-muted-foreground">No hay fees config disponibles.</div>
-          ) : (
-            feesConfig.map((record) => (
-              <div key={record.id} className="rounded-xl border border-border/70 p-4">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div>
-                    <div className="font-medium">{record.type}</div>
-                    <div className="text-xs text-muted-foreground">{record.fee_type}</div>
-                  </div>
-                  {isAdmin ? <FeeConfigDialog actor={actor} onUpdated={onUpdateFeeConfig} record={record} /> : null}
-                </div>
-                <div className="text-sm text-muted-foreground">{record.value} {record.currency}</div>
-              </div>
-            ))
-          )}
+        <CardContent className="p-0">
+          {!isAdmin ? <div className="p-6"><AdminOnlyNotice /></div> : null}
+          <Table>
+            <TableHeader className="bg-muted/30">
+              <TableRow className="hover:bg-transparent border-none">
+                <TableHead className="py-3 pl-6 text-[11px] font-bold uppercase tracking-wider">Concepto / Tipo</TableHead>
+                <TableHead className="py-3 text-[11px] font-bold uppercase tracking-wider text-center">Valor</TableHead>
+                <TableHead className="py-3 pr-6 text-right"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {feesConfig.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="py-8 text-center text-muted-foreground text-sm italic">
+                    No hay comisiones configuradas.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                feesConfig.map((record) => (
+                  <TableRow key={record.id} className="group transition-colors hover:bg-muted/30">
+                    <TableCell className="py-4 pl-6">
+                      <div className="font-semibold text-foreground/90 text-sm">{record.type}</div>
+                      <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mt-0.5">
+                        {record.fee_type === 'percentage' ? 'Porcentual' : 'Monto Fijo'}
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-4 text-center">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-muted/60 border border-border/40">
+                        {record.value}{record.fee_type === 'percentage' ? '%' : ` ${record.currency}`}
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-4 pr-6 text-right">
+                      <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                        {isAdmin ? <FeeConfigDialog actor={actor} onUpdated={onUpdateFeeConfig} record={record} /> : null}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>App settings</CardTitle>
-          <CardDescription>Edicion conservadora del valor, preservando el resto del registro.</CardDescription>
+      {/* App Settings Card */}
+      <Card className="border-border/60 bg-background/95 shadow-sm overflow-hidden">
+        <CardHeader className="border-b border-border/40 pb-6">
+          <div className="flex items-center gap-3">
+            <div className="size-10 rounded-xl bg-sky-500/10 flex items-center justify-center text-sky-600">
+              <ShieldCheck className="size-5" />
+            </div>
+            <div className="space-y-1">
+              <CardTitle className="text-lg font-bold tracking-tight">Variables del Sistema</CardTitle>
+              <CardDescription className="text-[13px]">
+                Ajustes globales y constantes operativas de la aplicación.
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {!isAdmin ? <AdminOnlyNotice /> : null}
-          {appSettings.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border/70 p-6 text-sm text-muted-foreground">No hay app settings disponibles.</div>
-          ) : (
-            appSettings.map((record, index) => (
-              <div key={String(record.id ?? record.key ?? record.name ?? index)} className="rounded-xl border border-border/70 p-4">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div>
-                    <div className="font-medium">{String(record.key ?? record.name ?? `setting-${index + 1}`)}</div>
-                    <div className="text-xs text-muted-foreground">Valor actual</div>
-                  </div>
-                  {isAdmin ? <AppSettingDialog actor={actor} onUpdated={onUpdateAppSetting} record={record} /> : null}
-                </div>
-                <div className="text-sm text-muted-foreground">{String(record.value ?? 'sin valor')}</div>
-              </div>
-            ))
-          )}
+        <CardContent className="p-0">
+          {!isAdmin ? <div className="p-6"><AdminOnlyNotice /></div> : null}
+          <Table>
+            <TableHeader className="bg-muted/30">
+              <TableRow className="hover:bg-transparent border-none">
+                <TableHead className="py-3 pl-6 text-[11px] font-bold uppercase tracking-wider">Variable</TableHead>
+                <TableHead className="py-3 text-[11px] font-bold uppercase tracking-wider">Valor Actual</TableHead>
+                <TableHead className="py-3 pr-6 text-right"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {appSettings.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="py-8 text-center text-muted-foreground text-sm italic">
+                    Sin variables detectadas.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                appSettings.map((record, index) => {
+                  const key = String(record.key ?? record.name ?? `setting-${index + 1}`)
+                  const value = String(record.value ?? 'sin valor')
+                  return (
+                    <TableRow key={String(record.id ?? key)} className="group transition-colors hover:bg-muted/30">
+                      <TableCell className="py-4 pl-6">
+                        <div className="font-mono text-[13px] font-bold text-sky-600/90 tracking-tight">{key}</div>
+                      </TableCell>
+                      <TableCell className="py-4 max-w-[200px]">
+                        <div className="text-[12px] font-medium text-muted-foreground truncate" title={value}>
+                          {value.length > 35 ? `${value.slice(0, 35)}...` : value}
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-4 pr-6 text-right">
+                        <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                          {isAdmin ? <AppSettingDialog actor={actor} onUpdated={onUpdateAppSetting} record={record} /> : null}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>
@@ -660,32 +727,92 @@ function ConfigPanel({
 
 function PsavPanel({ actor, isAdmin, onChangeRecord, records }: { actor: StaffActor; isAdmin: boolean; onChangeRecord: (record: PsavConfigRow | null, mode: 'replace' | 'remove') => void; records: PsavConfigRow[] }) {
   return (
-    <Card>
-      <CardHeader className="gap-3 md:flex-row md:items-start md:justify-between">
-        <div>
-          <CardTitle>PSAV configs</CardTitle>
-          <CardDescription>Gestion generica con `upsert` y `delete` porque el contrato no expone columnas exactas.</CardDescription>
+    <Card className="border-border/60 bg-background/95 shadow-sm">
+      <CardHeader className="gap-3 md:flex-row md:items-center md:justify-between border-b border-border/40 pb-6">
+        <div className="space-y-1">
+          <CardTitle className="text-xl font-semibold tracking-tight">Canales de Pago (PSAV)</CardTitle>
+          <CardDescription className="text-[13px]">
+            Configuración de rutas de depósito directo para usuarios.
+          </CardDescription>
         </div>
-        {isAdmin ? <PsavCreateDialog actor={actor} onUpdated={onChangeRecord} /> : null}
+        {isAdmin ? (
+          <PsavCreateDialog actor={actor} onUpdated={onChangeRecord} />
+        ) : null}
       </CardHeader>
-      <CardContent className="space-y-3">
-        {!isAdmin ? <AdminOnlyNotice /> : null}
-        {records.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border/70 p-6 text-sm text-muted-foreground">No hay PSAV configs disponibles.</div>
-        ) : (
-          records.map((record) => (
-            <div key={record.id} className="rounded-xl border border-border/70 p-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div>
-                  <div className="font-medium">{record.id}</div>
-                  <div className="text-xs text-muted-foreground">{record.is_active === false ? 'inactive' : 'active'}</div>
-                </div>
-                {isAdmin ? <PsavConfigDialogs actor={actor} onUpdated={onChangeRecord} record={record} /> : null}
-              </div>
-              <pre className="overflow-x-auto text-xs leading-5 text-foreground/85">{JSON.stringify(record, null, 2)}</pre>
-            </div>
-          ))
-        )}
+      <CardContent className="p-0">
+        {!isAdmin ? <div className="p-6"><AdminOnlyNotice /></div> : null}
+        
+        <Table>
+          <TableHeader className="bg-muted/30">
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-[80px] py-4 pl-6">QR</TableHead>
+              <TableHead className="py-4">Canal</TableHead>
+              <TableHead className="py-4">Banco y Cuenta</TableHead>
+              <TableHead className="py-4 text-center">Moneda</TableHead>
+              <TableHead className="py-4">Estado</TableHead>
+              <TableHead className="py-4 text-right pr-6">Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {records.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="py-12 text-center">
+                  <div className="flex flex-col items-center justify-center space-y-2 text-muted-foreground">
+                    <CircleDollarSign className="size-8 opacity-20" />
+                    <p className="text-sm font-medium">No hay configuraciones PSAV</p>
+                    <p className="text-xs">Usa el botón "Nuevo PSAV" para empezar.</p>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              records.map((record) => (
+                <TableRow key={record.id} className="group transition-colors hover:bg-muted/30">
+                  <TableCell className="py-4 pl-6">
+                    {record.qr_url ? (
+                      <div className="relative size-10 overflow-hidden rounded-lg border border-border/80 bg-white p-1 transition-transform group-hover:scale-110 shadow-sm">
+                        <img 
+                          src={record.qr_url} 
+                          alt="QR" 
+                          className="size-full object-contain"
+                        />
+                      </div>
+                    ) : (
+                      <div className="size-10 rounded-lg border border-dashed border-border/80 bg-muted/20 flex items-center justify-center">
+                        <ShieldCheck className="size-4 text-muted-foreground/40" />
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell className="py-4">
+                    <div className="font-semibold text-foreground/90">{record.name}</div>
+                    <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mt-0.5">ID: {record.id.slice(0, 8)}</div>
+                  </TableCell>
+                  <TableCell className="py-4">
+                    <div className="text-sm font-medium">{record.bank_name}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5 font-mono">{record.account_number}</div>
+                  </TableCell>
+                  <TableCell className="py-4 text-center font-bold text-xs">
+                    <span className="px-2 py-1 rounded-md bg-muted/60 border border-border/40">
+                      {record.currency}
+                    </span>
+                  </TableCell>
+                  <TableCell className="py-4">
+                    <Badge 
+                      variant={record.is_active ? "default" : "outline"}
+                      className={record.is_active ? "bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/20 border-emerald-500/20 shadow-none" : "text-muted-foreground border-border/60"}
+                    >
+                      {record.is_active ? "Activo" : "Inactivo"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="py-4 text-right pr-6">
+                    <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                      <PsavConfigDialogs actor={actor} onUpdated={onChangeRecord} record={record} />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   )

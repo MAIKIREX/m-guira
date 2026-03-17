@@ -11,7 +11,16 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { createClient } from '@/lib/supabase/browser'
+import { Label } from '@/components/ui/label'
 import { ACCEPTED_UPLOADS, safeFileExtension } from '@/lib/file-validation'
+import {
+  ShieldCheck,
+  CircleDollarSign,
+  AlertTriangle,
+  Bell,
+  CheckCircle2,
+  Trash2,
+} from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -337,49 +346,83 @@ export function FeeConfigDialog({ actor, onUpdated, record }: { actor: StaffActo
   async function submit(values: AdminFeeConfigValues) {
     try {
       const updatedRecord = await AdminService.updateFeeConfig({ actor, record, value: values.value, currency: values.currency, reason: values.reason })
-      toast.success('Fee config actualizada.')
+      toast.success('Parámetro de comisión actualizado.')
       setOpen(false)
       await onUpdated(updatedRecord)
     } catch (error) {
       console.error('Failed to update fee config', error)
-      toast.error('No se pudo actualizar la fee config.')
+      toast.error('Error al actualizar la comisión.')
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="sm" variant="outline" />}>Editar</DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Editar fee config</DialogTitle>
-          <DialogDescription>Ajusta \`value\` y \`currency\` sin tocar la estructura del registro.</DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form className="space-y-4" onSubmit={form.handleSubmit(submit)}>
-            <FormField control={form.control} name="value" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Valor</FormLabel>
-                <FormControl><Input {...field} min={0} step="0.01" type="number" /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="currency" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Moneda</FormLabel>
-                <FormControl><Input {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="reason" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Motivo</FormLabel>
-                <FormControl><Textarea {...field} placeholder="Justifica el cambio" /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <DialogFooter><Button disabled={form.formState.isSubmitting} type="submit">{form.formState.isSubmitting ? 'Guardando...' : 'Guardar cambios'}</Button></DialogFooter>
-          </form>
-        </Form>
+      <DialogTrigger render={<Button size="sm" variant="ghost" className="h-8 px-2 hover:bg-amber-500/10 hover:text-amber-600 font-bold text-[10px] uppercase tracking-wider transition-all" />}>
+        Editar
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[450px] gap-0 p-0 overflow-hidden border-border/40 shadow-2xl">
+        <div className="bg-amber-500/5 border-b border-amber-500/10 p-6 flex items-center gap-4">
+          <div className="size-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-600 shadow-sm">
+            <CircleDollarSign className="size-6" />
+          </div>
+          <div className="space-y-0.5">
+            <DialogTitle className="text-lg font-bold">Ajustar Comisión</DialogTitle>
+            <DialogDescription className="text-xs text-amber-600/70 font-medium">
+              Modificando: <span className="text-amber-700 font-bold">{record.type}</span>
+            </DialogDescription>
+          </div>
+        </div>
+
+        <div className="p-6 md:p-8">
+          <Form {...form}>
+            <form className="space-y-6" onSubmit={form.handleSubmit(submit)}>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField control={form.control} name="value" render={({ field }) => (
+                  <FormItem className="space-y-1.5">
+                    <FormLabel className="text-[13px] font-semibold text-foreground/80">Valor Numérico</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input {...field} min={0} step="0.01" type="number" className="h-10 bg-muted/20 border-border/60 focus:bg-background transition-all pr-8 font-bold" />
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground/60">
+                          {record.fee_type === 'percentage' ? '%' : record.currency}
+                        </div>
+                      </div>
+                    </FormControl>
+                    <FormMessage className="text-[11px]" />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="currency" render={({ field }) => (
+                  <FormItem className="space-y-1.5">
+                    <FormLabel className="text-[13px] font-semibold text-foreground/80">Divisa</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="P. ej: BOB" className="h-10 bg-muted/20 border-border/60 focus:bg-background transition-all font-mono uppercase" />
+                    </FormControl>
+                    <FormMessage className="text-[11px]" />
+                  </FormItem>
+                )} />
+              </div>
+
+              <FormField control={form.control} name="reason" render={({ field }) => (
+                <FormItem className="space-y-1.5">
+                  <FormLabel className="text-[13px] font-semibold text-foreground/80">Justificación del Cambio</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} placeholder="Indica el motivo de este ajuste..." className="min-h-[100px] bg-muted/20 border-border/60 focus:bg-background transition-all resize-none" />
+                  </FormControl>
+                  <FormMessage className="text-[11px]" />
+                </FormItem>
+              )} />
+
+              <div className="flex flex-col gap-3">
+                <Button disabled={form.formState.isSubmitting} type="submit" className="w-full font-bold bg-amber-600 text-white hover:bg-amber-700 h-10 rounded-full shadow-lg shadow-amber-600/10 transition-all flex items-center justify-center gap-2">
+                  {form.formState.isSubmitting ? <><div className="size-3 border-2 border-white/30 border-t-white animate-spin rounded-full" /> Procesando...</> : 'Actualizar Parámetros'}
+                </Button>
+                <div className="text-[10px] text-center text-muted-foreground italic">
+                  Este ajuste afecta los cálculos de todas las órdenes futuras.
+                </div>
+              </div>
+            </form>
+          </Form>
+        </div>
       </DialogContent>
     </Dialog>
   )
@@ -397,70 +440,98 @@ export function AppSettingDialog({ actor, onUpdated, record }: { actor: StaffAct
     try {
       const nextValue = parseAppSettingValue(values.value, record.value)
       const updatedRecord = await AdminService.updateAppSetting({ actor, record, value: nextValue, reason: values.reason })
-      toast.success('App setting actualizado.')
+      toast.success('Variable de sistema actualizada.')
       setOpen(false)
       await onUpdated(updatedRecord)
     } catch (error) {
       console.error('Failed to update app setting', error)
-      toast.error(error instanceof Error ? error.message : 'No se pudo actualizar el app setting.')
+      toast.error(error instanceof Error ? error.message : 'Error al actualizar la variable.')
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="sm" variant="outline" />}>Editar</DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Editar app setting</DialogTitle>
-          <DialogDescription>
-            Preserva el tipo actual del valor. Tipo detectado: \`{valueKind}\`.
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form className="space-y-4" onSubmit={form.handleSubmit(submit)}>
-            <FormField control={form.control} name="value" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Valor</FormLabel>
-                <FormControl>
-                  <Textarea {...field} className="min-h-[120px] font-mono text-sm" />
-                </FormControl>
-                <p className="text-xs text-muted-foreground">
-                  {getAppSettingHelpText(valueKind)}
-                </p>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="reason" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Motivo</FormLabel>
-                <FormControl><Textarea {...field} placeholder="Justifica el cambio" /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <DialogFooter><Button disabled={form.formState.isSubmitting} type="submit">{form.formState.isSubmitting ? 'Guardando...' : 'Guardar cambios'}</Button></DialogFooter>
-          </form>
-        </Form>
+      <DialogTrigger render={<Button size="sm" variant="ghost" className="h-8 px-2 hover:bg-sky-500/10 hover:text-sky-600 font-bold text-[10px] uppercase tracking-wider transition-all" />}>
+        Configurar
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[550px] gap-0 p-0 overflow-hidden border-border/40 shadow-2xl">
+        <div className="bg-sky-500/5 border-b border-sky-500/10 p-6 flex items-center gap-4">
+          <div className="size-12 rounded-2xl bg-sky-500/10 flex items-center justify-center text-sky-600 shadow-sm">
+            <ShieldCheck className="size-6" />
+          </div>
+          <div className="space-y-0.5">
+            <DialogTitle className="text-lg font-bold">Variable de Entorno</DialogTitle>
+            <DialogDescription className="text-xs text-sky-600/70 font-mono font-bold uppercase">
+              {String(record.key ?? record.name ?? 'CONFIG_VAR')}
+            </DialogDescription>
+          </div>
+          <div className="ml-auto">
+            <Badge variant="outline" className="bg-sky-500/5 text-[10px] border-sky-500/20 text-sky-600 font-bold uppercase tracking-tighter px-2 py-0">
+              Type: {valueKind}
+            </Badge>
+          </div>
+        </div>
+
+        <div className="p-6 md:p-8">
+          <Form {...form}>
+            <form className="space-y-6" onSubmit={form.handleSubmit(submit)}>
+              <FormField control={form.control} name="value" render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <FormLabel className="text-[13px] font-semibold text-foreground/80">Valor de la Variable</FormLabel>
+                    <span className="text-[10px] text-muted-foreground font-medium italic">Editor Seguro</span>
+                  </div>
+                  <FormControl>
+                    <div className="relative group/editor">
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-sky-500/20 group-focus-within/editor:bg-sky-500 transition-colors rounded-l-md" />
+                      <Textarea 
+                        {...field} 
+                        className="min-h-[140px] font-mono text-[13px] bg-muted/20 border-border/60 focus:bg-background transition-all resize-none pl-4 leading-relaxed" 
+                      />
+                    </div>
+                  </FormControl>
+                  <div className="bg-muted/30 rounded-lg p-3 border border-border/40">
+                    <p className="text-[11px] text-muted-foreground leading-relaxed flex items-center gap-2">
+                      <Bell className="size-3 text-sky-500/60" />
+                      <span>{getAppSettingHelpText(valueKind)}</span>
+                    </p>
+                  </div>
+                  <FormMessage className="text-[11px]" />
+                </FormItem>
+              )} />
+
+              <FormField control={form.control} name="reason" render={({ field }) => (
+                <FormItem className="space-y-1.5">
+                  <FormLabel className="text-[13px] font-semibold text-foreground/80">Bitácora Operativa</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} placeholder="Detalla el impacto de este cambio..." className="min-h-[80px] bg-muted/20 border-border/60 focus:bg-background transition-all resize-none" />
+                  </FormControl>
+                  <FormMessage className="text-[11px]" />
+                </FormItem>
+              )} />
+
+              <div className="pt-2">
+                <Button disabled={form.formState.isSubmitting} type="submit" className="w-full font-bold bg-sky-600 text-white hover:bg-sky-700 h-10 rounded-full shadow-lg shadow-sky-600/10 transition-all flex items-center justify-center gap-2">
+                  {form.formState.isSubmitting ? <><div className="size-3 border-2 border-white/30 border-t-white animate-spin rounded-full" /> Sincronizando...</> : 'Guardar Cambios Críticos'}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </div>
       </DialogContent>
     </Dialog>
   )
 }
 
-export function PsavConfigDialogs({ actor, onUpdated, record }: { actor: StaffActor; onUpdated: (record: PsavConfigRow | null, mode: 'replace' | 'remove') => Promise<void> | void; record: PsavConfigRow }) {
-  return (
-    <div className="flex flex-wrap justify-end gap-2">
-      <PsavUpsertDialog actor={actor} label="Editar" onUpdated={onUpdated} record={record} />
-      <PsavDeleteDialog actor={actor} onUpdated={onUpdated} record={record} />
-    </div>
-  )
-}
-
-export function PsavCreateDialog({ actor, onUpdated }: { actor: StaffActor; onUpdated: (record: PsavConfigRow | null, mode: 'replace' | 'remove') => Promise<void> | void }) {
+export function PsavCreateDialog({ actor, onUpdated }: { actor: StaffActor; onUpdated: (record: PsavConfigRow | null, mode: 'replace' | 'remove') => void }) {
   return <PsavUpsertDialog actor={actor} label="Nuevo PSAV" onUpdated={onUpdated} />
 }
 
-function PsavUpsertDialog({ actor, label, onUpdated, record }: { actor: StaffActor; label: string; onUpdated: (record: PsavConfigRow | null, mode: 'replace' | 'remove') => Promise<void> | void; record?: PsavConfigRow }) {
+function PsavUpsertDialog({ actor, label, onUpdated, record }: { actor: StaffActor; label: string; onUpdated: (record: PsavConfigRow | null, mode: 'replace' | 'remove') => void; record?: PsavConfigRow }) {
   const [open, setOpen] = useState(false)
   const [file, setFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(record?.qr_url as string || null)
+  
   const form = useForm<AdminPsavRecordValues>({
     resolver: zodResolver(adminPsavRecordSchema),
     defaultValues: {
@@ -472,6 +543,12 @@ function PsavUpsertDialog({ actor, label, onUpdated, record }: { actor: StaffAct
       reason: '',
     },
   })
+
+  // Watch fields for live preview
+  const watchedName = form.watch('name')
+  const watchedBank = form.watch('bank_name')
+  const watchedAccount = form.watch('account_number')
+  const watchedCurrency = form.watch('currency')
 
   async function submit(values: AdminPsavRecordValues) {
     try {
@@ -497,121 +574,236 @@ function PsavUpsertDialog({ actor, label, onUpdated, record }: { actor: StaffAct
       if (record?.id) payload.id = record.id
 
       const updatedRecord = await AdminService.upsertPsavConfig({ actor, payload, reason: values.reason })
-      toast.success(record ? 'PSAV actualizado.' : 'PSAV creado.')
+      toast.success(record ? 'PSAV actualizado correctamente.' : 'PSAV creado con éxito.')
       setOpen(false)
       setFile(null)
       await onUpdated(updatedRecord, 'replace')
     } catch (error) {
       console.error('Failed to upsert psav config', error)
-      toast.error('No se pudo guardar el PSAV config. Verifica los datos o la imagen.')
+      toast.error('Error al guardar configuración. Verifica banca y archivos.')
+    }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0] || null
+    setFile(selectedFile)
+    if (selectedFile) {
+      const url = URL.createObjectURL(selectedFile)
+      setPreviewUrl(url)
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="sm" variant="outline" />}>{label}</DialogTrigger>
-      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{record ? 'Editar PSAV config' : 'Crear PSAV config'}</DialogTitle>
-          <DialogDescription>Completa el formulario; la información se guardará en `psav_configs`.</DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form className="space-y-4" onSubmit={form.handleSubmit(submit)}>
-            <FormField control={form.control} name="name" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nombre del Canal</FormLabel>
-                <FormControl><Input {...field} placeholder="Punto de Pago, Cajero..." /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="bank_name" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Banco</FormLabel>
-                <FormControl><Input {...field} placeholder="Banco Local" /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="account_number" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Número de Cuenta</FormLabel>
-                <FormControl><Input {...field} placeholder="1234567890" /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="currency" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Moneda</FormLabel>
-                <FormControl><Input {...field} placeholder="BOB, USD..." /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="is_active" render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">Activo</FormLabel>
+      <DialogTrigger render={<Button size="sm" variant={record ? "ghost" : "default"} className={record ? "h-8 px-2 hover:bg-muted font-medium text-xs shadow-none border-none" : "h-9 px-4 font-semibold shadow-sm transition-all hover:scale-[1.02]"} />}>
+        {label}
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[700px] gap-0 p-0 overflow-hidden border-border/40 shadow-2xl">
+        <div className="grid md:grid-cols-[1fr_260px]">
+          {/* Form Side */}
+          <div className="p-6 md:p-8 space-y-6">
+            <DialogHeader className="space-y-1">
+              <DialogTitle className="text-xl font-bold tracking-tight">
+                {record ? 'Refinar Configuración PSAV' : 'Nuevo Canal de Pago'}
+              </DialogTitle>
+              <DialogDescription className="text-sm">
+                Define los detalles del banco y el código QR para depósitos directos.
+              </DialogDescription>
+            </DialogHeader>
+
+            <Form {...form}>
+              <form className="space-y-5" onSubmit={form.handleSubmit(submit)}>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField control={form.control} name="name" render={({ field }) => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className="text-[13px] font-semibold text-foreground/80">Nombre del Canal</FormLabel>
+                      <FormControl><Input {...field} placeholder="Punto de Pago, etc." className="h-10 bg-muted/20 border-border/60 focus:bg-background transition-all" /></FormControl>
+                      <FormMessage className="text-[11px]" />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="bank_name" render={({ field }) => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className="text-[13px] font-semibold text-foreground/80">Entidad Bancaria</FormLabel>
+                      <FormControl><Input {...field} placeholder="Banco de ejemplo" className="h-10 bg-muted/20 border-border/60 focus:bg-background transition-all" /></FormControl>
+                      <FormMessage className="text-[11px]" />
+                    </FormItem>
+                  )} />
                 </div>
-                <FormControl>
-                  <Switch checked={field.value} onCheckedChange={field.onChange} />
-                </FormControl>
-              </FormItem>
-            )} />
-            <div className="space-y-2 text-sm font-medium">
-              <FormLabel>Código QR (Imagen)</FormLabel>
-              {record?.qr_url && <img src={record.qr_url as string} alt="QR actual" className="w-24 h-24 object-contain rounded-md block mb-2 border border-border" />}
-              <Input accept={ACCEPTED_UPLOADS} onChange={(event) => setFile(event.target.files?.[0] ?? null)} type="file" />
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField control={form.control} name="account_number" render={({ field }) => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className="text-[13px] font-semibold text-foreground/80">Número de Cuenta</FormLabel>
+                      <FormControl><Input {...field} placeholder="000-000-000" className="h-10 bg-muted/20 border-border/60 focus:bg-background transition-all" /></FormControl>
+                      <FormMessage className="text-[11px]" />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="currency" render={({ field }) => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className="text-[13px] font-semibold text-foreground/80">Divisa</FormLabel>
+                      <FormControl><Input {...field} placeholder="BOB, USD..." className="h-10 bg-muted/20 border-border/60 focus:bg-background transition-all" /></FormControl>
+                      <FormMessage className="text-[11px]" />
+                    </FormItem>
+                  )} />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[13px] font-semibold text-foreground/80">Credencial QR</Label>
+                  <div className="relative group/file">
+                    <Input 
+                      type="file" 
+                      accept={ACCEPTED_UPLOADS} 
+                      onChange={handleFileChange}
+                      className="cursor-pointer file:cursor-pointer h-10 bg-muted/20 border-border/60 file:bg-foreground/5 file:border-0 file:text-[11px] file:font-bold file:uppercase file:tracking-wider file:text-foreground/80 file:mr-4 hover:border-foreground/20 transition-all" 
+                    />
+                  </div>
+                </div>
+
+                <FormField control={form.control} name="is_active" render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-xl border border-border/60 bg-muted/10 p-4 transition-colors hover:bg-muted/20">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-sm font-semibold">Visibilidad Operativa</FormLabel>
+                      <p className="text-[12px] text-muted-foreground">Determina si los usuarios ven esta opción.</p>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} className="data-[state=checked]:bg-emerald-500" />
+                    </FormControl>
+                  </FormItem>
+                )} />
+
+                <FormField control={form.control} name="reason" render={({ field }) => (
+                  <FormItem className="space-y-1.5">
+                    <FormLabel className="text-[13px] font-semibold text-foreground/80">Bitácora de Cambio</FormLabel>
+                    <FormControl><Textarea {...field} placeholder="Motivo de la actualización..." className="min-h-[80px] bg-muted/20 border-border/60 focus:bg-background transition-all resize-none" /></FormControl>
+                    <FormMessage className="text-[11px]" />
+                  </FormItem>
+                )} />
+
+                <DialogFooter className="pt-2">
+                  <Button disabled={form.formState.isSubmitting} type="submit" className="w-full sm:w-auto font-bold bg-foreground text-background hover:bg-foreground/90 h-10 px-8 rounded-full shadow-lg shadow-foreground/10 transition-all flex items-center gap-2">
+                    {form.formState.isSubmitting ? <><div className="size-3 border-2 border-background/30 border-t-background animate-spin rounded-full" /> Guardando...</> : record ? 'Actualizar PSAV' : 'Crear Canal'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </div>
+
+          {/* Preview Side */}
+          <div className="bg-muted/40 border-l border-border/40 p-6 flex flex-col items-center space-y-6">
+            <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground w-full text-center">Previsualización</div>
+            
+            <div className="w-full aspect-square rounded-2xl bg-white shadow-xl shadow-black/5 border border-border/50 flex flex-col items-center justify-center p-6 space-y-4 relative overflow-hidden group">
+              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-500/50 via-sky-500/50 to-emerald-500/50" />
+              
+              {previewUrl ? (
+                <img 
+                  src={previewUrl} 
+                  alt="QR Preview" 
+                  className="w-full h-full object-contain transition-transform group-hover:scale-105" 
+                />
+              ) : (
+                <div className="flex flex-col items-center text-center space-y-2 text-muted-foreground/40">
+                  <div className="size-12 rounded-full border-2 border-dashed border-muted-foreground/20 flex items-center justify-center">
+                    <ShieldCheck className="size-6" />
+                  </div>
+                  <div className="text-[11px] font-medium leading-tight">Sin QR<br/>cargado</div>
+                </div>
+              )}
             </div>
-            <FormField control={form.control} name="reason" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Motivo</FormLabel>
-                <FormControl><Textarea {...field} placeholder="Justifica el cambio" /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <DialogFooter><Button disabled={form.formState.isSubmitting} type="submit">{form.formState.isSubmitting ? 'Guardando...' : 'Guardar PSAV'}</Button></DialogFooter>
-          </form>
-        </Form>
+
+            <div className="w-full space-y-3 px-1">
+              <div className="space-y-1 border-b border-border/30 pb-3">
+                <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Concepto</div>
+                <div className="text-sm font-extrabold truncate text-foreground/90">{watchedName || 'Nombre del Canal'}</div>
+              </div>
+              <div className="space-y-1 border-b border-border/30 pb-3">
+                <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Banco</div>
+                <div className="text-sm font-semibold truncate text-foreground/90">{watchedBank || 'Banco Ejemplo'}</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Cuenta ({watchedCurrency || 'CUR'})</div>
+                <div className="text-xs font-mono font-medium text-foreground/70">{watchedAccount || '0000 0000 0000'}</div>
+              </div>
+            </div>
+
+            <div className="flex-1" />
+            
+            <div className="w-full p-3 rounded-xl bg-orange-500/5 border border-orange-500/10 text-[11px] text-orange-600/80 italic leading-relaxed text-center">
+              Asegúrate de que el QR sea legible y los datos bancarios exactos.
+            </div>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   )
 }
 
-function PsavDeleteDialog({ actor, onUpdated, record }: { actor: StaffActor; onUpdated: (record: PsavConfigRow | null, mode: 'replace' | 'remove') => Promise<void> | void; record: PsavConfigRow }) {
+export function PsavConfigDialogs({ actor, onUpdated, record }: { actor: StaffActor; onUpdated: (record: PsavConfigRow | null, mode: 'replace' | 'remove') => void; record: PsavConfigRow }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <PsavUpsertDialog actor={actor} label="Editar" onUpdated={onUpdated} record={record} />
+      <div className="w-px h-3 bg-border/40 mx-0.5" />
+      <PsavDeleteDialog actor={actor} onUpdated={onUpdated} record={record} />
+    </div>
+  )
+}
+
+function PsavDeleteDialog({ actor, onUpdated, record }: { actor: StaffActor; onUpdated: (record: PsavConfigRow | null, mode: 'replace' | 'remove') => void; record: PsavConfigRow }) {
   const [open, setOpen] = useState(false)
   const form = useForm<AdminReasonValues>({ resolver: zodResolver(adminReasonSchema), defaultValues: { reason: '' } })
 
   async function submit(values: AdminReasonValues) {
     try {
       await AdminService.deletePsavConfig({ actor, record, reason: values.reason })
-      toast.success('PSAV eliminado.')
+      toast.success('Canal PSAV eliminado del sistema.')
       setOpen(false)
       form.reset()
       await onUpdated(record, 'remove')
     } catch (error) {
       console.error('Failed to delete psav config', error)
-      toast.error('No se pudo eliminar el PSAV config.')
+      toast.error('Error al eliminar. Trazabilidad guardada.')
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="sm" variant="destructive" />}>Eliminar</DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Eliminar PSAV config</DialogTitle>
-          <DialogDescription>Se elimina el registro y se deja trazabilidad en auditoria.</DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form className="space-y-4" onSubmit={form.handleSubmit(submit)}>
-            <FormField control={form.control} name="reason" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Motivo</FormLabel>
-                <FormControl><Textarea {...field} placeholder="Justifica la eliminacion" /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <DialogFooter><Button disabled={form.formState.isSubmitting} type="submit" variant="destructive">{form.formState.isSubmitting ? 'Guardando...' : 'Eliminar PSAV'}</Button></DialogFooter>
-          </form>
-        </Form>
+      <DialogTrigger render={<Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-all" />}>
+        <Trash2 className="size-4" />
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md gap-0 p-0 overflow-hidden border-destructive/20 shadow-2xl">
+        <div className="p-6 md:p-8 flex flex-col items-center text-center space-y-4">
+          <div className="size-16 rounded-full bg-destructive/10 flex items-center justify-center mb-2">
+            <AlertTriangle className="size-8 text-destructive" />
+          </div>
+          
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="text-xl font-bold tracking-tight text-destructive">¿Eliminar este canal?</DialogTitle>
+            <DialogDescription className="text-sm">
+              Esta acción es irreversible. El canal <span className="font-semibold text-foreground">"{record.name}"</span> dejará de estar disponible para todos los usuarios.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Form {...form}>
+            <form className="w-full space-y-5" onSubmit={form.handleSubmit(submit)}>
+              <FormField control={form.control} name="reason" render={({ field }) => (
+                <FormItem className="space-y-1.5">
+                  <FormLabel className="text-[13px] font-semibold text-foreground/80">Motivo de la Eliminación</FormLabel>
+                  <FormControl><Textarea {...field} placeholder="Justifica esta acción crítica..." className="min-h-[100px] bg-muted/20 border-border/60 focus:bg-background transition-all resize-none" /></FormControl>
+                  <FormMessage className="text-[11px]" />
+                </FormItem>
+              )} />
+
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <Button variant="outline" type="button" onClick={() => setOpen(false)} className="h-10 font-bold rounded-full">
+                  Cancelar
+                </Button>
+                <Button disabled={form.formState.isSubmitting} type="submit" variant="destructive" className="h-10 font-bold rounded-full shadow-lg shadow-destructive/10 flex items-center gap-2">
+                  {form.formState.isSubmitting ? <><div className="size-3 border-2 border-white/30 border-t-white animate-spin rounded-full" /> Borrando...</> : 'Borrador Definitivo'}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </div>
       </DialogContent>
     </Dialog>
   )

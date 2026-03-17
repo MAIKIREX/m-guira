@@ -8,6 +8,8 @@ export const paymentOrderSchema = z
       'us_to_wallet',
       'crypto_to_crypto',
     ]),
+    receive_variant: z.enum(['bank_account', 'bank_qr', 'wallet']).optional(),
+    ui_method_group: z.enum(['bank', 'crypto']).optional(),
     supplier_id: z.string().optional(),
     amount_origin: z.coerce.number().positive('El monto debe ser mayor a cero.'),
     amount_converted: z.coerce.number().nonnegative('Ingresa un monto destino valido.'),
@@ -33,6 +35,22 @@ export const paymentOrderSchema = z
     crypto_network: z.string().trim().optional(),
   })
   .superRefine((value, ctx) => {
+    if (value.route === 'us_to_bolivia' && !value.receive_variant) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Selecciona como quieres recibir en Bolivia.',
+        path: ['receive_variant'],
+      })
+    }
+
+    if (value.route === 'bolivia_to_exterior' && !value.ui_method_group) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Selecciona si el envio sale por banco o por crypto.',
+        path: ['ui_method_group'],
+      })
+    }
+
     if ((value.route === 'bolivia_to_exterior' || value.route === 'crypto_to_crypto') && value.payment_reason.length < 5) {
       ctx.addIssue({
         code: 'custom',
@@ -51,7 +69,7 @@ export const paymentOrderSchema = z
       }
     }
 
-    if (value.delivery_method === 'swift' && value.route === 'bolivia_to_exterior') {
+    if (value.delivery_method === 'swift' && (value.route === 'bolivia_to_exterior' || value.route === 'us_to_bolivia')) {
       const requiredFields: Array<[keyof typeof value, string]> = [
         ['swift_bank_name', 'El banco es obligatorio.'],
         ['swift_code', 'El codigo SWIFT es obligatorio.'],
@@ -67,12 +85,17 @@ export const paymentOrderSchema = z
       })
     }
 
-    if (value.delivery_method === 'ach' && value.route === 'bolivia_to_exterior') {
-      const requiredFields: Array<[keyof typeof value, string]> = [
-        ['ach_routing_number', 'El routing number es obligatorio.'],
-        ['ach_account_number', 'La cuenta ACH es obligatoria.'],
-        ['ach_bank_name', 'El banco ACH es obligatorio.'],
-      ]
+    if (value.delivery_method === 'ach' && (value.route === 'bolivia_to_exterior' || value.route === 'us_to_bolivia')) {
+      const requiredFields: Array<[keyof typeof value, string]> = value.route === 'us_to_bolivia'
+        ? [
+            ['ach_account_number', 'La cuenta bancaria es obligatoria.'],
+            ['ach_bank_name', 'El banco es obligatorio.'],
+          ]
+        : [
+            ['ach_routing_number', 'El routing number es obligatorio.'],
+            ['ach_account_number', 'La cuenta ACH es obligatoria.'],
+            ['ach_bank_name', 'El banco ACH es obligatorio.'],
+          ]
 
       requiredFields.forEach(([field, message]) => {
         if (!value[field]) {

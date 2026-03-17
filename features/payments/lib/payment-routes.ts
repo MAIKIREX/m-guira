@@ -27,7 +27,7 @@ export const supportedPaymentRoutes: Array<{
     key: 'us_to_bolivia',
     label: 'Exterior a Bolivia',
     description: 'Expediente WORLD_TO_BO para depositos desde el exterior con destino Bolivia.',
-    supportedDeliveryMethods: ['swift', 'ach', 'crypto'],
+    supportedDeliveryMethods: ['ach'],
   },
   {
     key: 'us_to_wallet',
@@ -99,6 +99,7 @@ function resolveProcessingRail(
 
 function buildMetadata(values: PaymentOrderFormValues): PaymentOrderMetadata {
   const metadata: PaymentOrderMetadata = {
+    route: values.route,
     delivery_method: values.delivery_method,
     payment_reason: values.payment_reason,
     intended_amount: values.intended_amount,
@@ -106,6 +107,21 @@ function buildMetadata(values: PaymentOrderFormValues): PaymentOrderMetadata {
       ? values.crypto_address || values.destination_address
       : values.destination_address,
     stablecoin: values.stablecoin,
+  }
+
+  if (values.route === 'us_to_bolivia') {
+    metadata.receive_variant = values.receive_variant
+    metadata.instructions_source = values.receive_variant === 'bank_qr' ? 'guira_hardcoded' : 'supplier'
+  }
+
+  if (values.route === 'us_to_wallet') {
+    metadata.receive_variant = 'wallet'
+    metadata.instructions_source = 'psav'
+  }
+
+  if (values.route === 'bolivia_to_exterior' || values.route === 'crypto_to_crypto') {
+    metadata.ui_method_group = values.ui_method_group ?? (values.delivery_method === 'crypto' ? 'crypto' : 'bank')
+    metadata.instructions_source = values.delivery_method === 'crypto' ? 'guira_hardcoded' : 'psav'
   }
 
   if (values.route === 'bolivia_to_exterior') {
@@ -122,7 +138,7 @@ function buildMetadata(values: PaymentOrderFormValues): PaymentOrderMetadata {
     }
   }
 
-  if (values.delivery_method === 'ach' && values.route === 'bolivia_to_exterior') {
+  if (values.delivery_method === 'ach' && (values.route === 'bolivia_to_exterior' || values.route === 'us_to_bolivia')) {
     metadata.ach_details = {
       routingNumber: values.ach_routing_number ?? '',
       accountNumber: values.ach_account_number ?? '',

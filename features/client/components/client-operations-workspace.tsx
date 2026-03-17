@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback } from 'react'
-import { Loader2, RefreshCw, ShieldAlert, Waypoints, WalletCards } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -12,9 +12,7 @@ import { CreatePaymentOrderForm } from '@/features/payments/components/create-pa
 import { PaymentsHistoryTable } from '@/features/payments/components/payments-history-table'
 import { SuppliersSection } from '@/features/payments/components/suppliers-section'
 import { useWalletDashboard } from '@/features/wallet/hooks/use-wallet-dashboard'
-import { WalletSummaryCards } from '@/features/wallet/components/wallet-summary-cards'
 import { ActiveTransfersTable } from '@/features/wallet/components/active-transfers-table'
-import { MovementHistoryTable } from '@/features/wallet/components/movement-history-table'
 import type { SupportedPaymentRoute } from '@/features/payments/lib/payment-routes'
 
 const MODE_CONFIG: Record<WorkspaceMode, {
@@ -169,6 +167,7 @@ export function ClientOperationsWorkspace({ mode }: { mode: WorkspaceMode }) {
           disabled={!canOperate}
           feesConfig={payments.snapshot.feesConfig}
           onCreateOrder={handleCreateOrder}
+          onUploadOrderFile={handleUploadOrderFile}
           psavConfigs={payments.snapshot.psavConfigs}
           suppliers={payments.snapshot.suppliers}
           userId={user.id}
@@ -224,27 +223,6 @@ export function ClientOperationsWorkspace({ mode }: { mode: WorkspaceMode }) {
           </Card>
         </div>
       ) : null}
-    </div>
-  )
-}
-
-function MetricTile({ icon: Icon, label, value }: { icon: typeof WalletCards; label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-border/70 bg-background/85 p-4">
-      <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
-        <Icon className="size-4" />
-        {label}
-      </div>
-      <div className="text-2xl font-semibold tracking-tight text-foreground">{value}</div>
-    </div>
-  )
-}
-
-function MetricRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/20 px-3 py-2">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium text-foreground">{value}</span>
     </div>
   )
 }

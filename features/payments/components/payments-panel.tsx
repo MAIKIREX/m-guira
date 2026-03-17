@@ -186,6 +186,7 @@ export function PaymentsPanel() {
             disabled={!canOperate}
             feesConfig={snapshot.feesConfig}
             onCreateOrder={createOrder}
+            onUploadOrderFile={uploadOrderFile}
             psavConfigs={snapshot.psavConfigs}
             suppliers={snapshot.suppliers}
             userId={user.id}

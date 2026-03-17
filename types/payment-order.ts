@@ -12,13 +12,20 @@ export type OrderStatus =
 export type DeliveryMethod = 'swift' | 'ach' | 'crypto'
 export type FundingMethod = 'bs' | 'crypto' | 'ach' | 'wallet'
 export type OrderFileField = 'support_document_url' | 'evidence_url'
+export type ReceiveVariant = 'bank_account' | 'bank_qr' | 'wallet'
+export type UiMethodGroup = 'bank' | 'crypto'
 
 export interface PaymentOrderMetadata {
+  route?: 'bolivia_to_exterior' | 'us_to_bolivia' | 'us_to_wallet' | 'crypto_to_crypto'
   delivery_method: DeliveryMethod
   payment_reason: string
   intended_amount: number
   destination_address: string
   stablecoin: string
+  receive_variant?: ReceiveVariant
+  ui_method_group?: UiMethodGroup
+  instructions_source?: 'psav' | 'guira_hardcoded' | 'supplier'
+  supplier_validation_note?: string
   quote_prepared_at?: string
   quote_prepared_by?: string
   client_quote_accepted_at?: string
