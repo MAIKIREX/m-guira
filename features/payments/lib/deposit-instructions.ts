@@ -33,7 +33,7 @@ export function estimateRouteValues(args: {
   const parallelBuyRate = findNumericSetting(args.appSettings, 'parallel_buy_rate') ?? legacyRate
   const parallelSellRate = findNumericSetting(args.appSettings, 'parallel_sell_rate') ?? legacyRate
 
-  const baseFee = findFirstFee(args.feesConfig)
+  const baseFeeTotal = resolveFeeTotal(args.feesConfig, amountOrigin)
 
   // 2. Determinar que tasa base aplicar segun la direccion de la operacion
   // bo_to_world -> compra de dolares -> parallel_buy_rate
@@ -51,42 +51,13 @@ export function estimateRouteValues(args: {
     destinationCurrency: args.destinationCurrency,
   })
 
-  if (args.route === 'bolivia_to_exterior') {
-    const feeTotal = baseFee
-    const amountConverted = Math.max((amountOrigin - feeTotal) * effectiveRate, 0)
-    return toEstimate({
-      amountConverted,
-      exchangeRateApplied: effectiveRate,
-      feeTotal,
-    })
-  }
+  // Aplicar formula: amount_converted = (amount_origin - fee_total) * rate
+  const amountConverted = Math.max((amountOrigin - baseFeeTotal) * effectiveRate, 0)
 
-  if (args.route === 'us_to_bolivia') {
-    const feeTotal = baseFee
-    const amountConverted = Math.max((amountOrigin - feeTotal) * effectiveRate, 0)
-    return toEstimate({
-      amountConverted,
-      exchangeRateApplied: effectiveRate,
-      feeTotal,
-    })
-  }
-
-  if (args.route === 'us_to_wallet') {
-    const feeTotal = Math.max(baseFee * 0.4, 5)
-    const amountConverted = Math.max(amountOrigin - feeTotal, 0)
-    return toEstimate({
-      amountConverted,
-      exchangeRateApplied: 1,
-      feeTotal,
-    })
-  }
-
-  const feeTotal = Math.max(baseFee * 0.35, 3)
-  const amountConverted = Math.max(amountOrigin - feeTotal, 0)
   return toEstimate({
     amountConverted,
-    exchangeRateApplied: 1,
-    feeTotal,
+    exchangeRateApplied: effectiveRate,
+    feeTotal: baseFeeTotal,
   })
 }
 
@@ -222,9 +193,23 @@ function findNumericSetting(settings: AppSettingRow[], key: string) {
   return null
 }
 
-function findFirstFee(fees: FeeConfigRow[]) {
-  const candidate = fees.find((fee) => typeof fee.value === 'number')
-  return candidate?.value ?? 15
+function resolveFeeTotal(fees: FeeConfigRow[], amountOrigin: number) {
+  // 1. Intentar encontrar la comision de pago a proveedores (que es la principal documentada)
+  // o caer en la primera comision valida si no existe
+  const candidate = fees.find((fee) => fee.type === 'supplier_payment') || fees[0]
+  
+  if (!candidate) return 15 // Fallback historico
+
+  // Convertir el valor a numero (Supabase devuelve numeric como string a veces)
+  const feeValue = typeof candidate.value === 'string' 
+    ? parseFloat(candidate.value) 
+    : (typeof candidate.value === 'number' ? candidate.value : 0)
+
+  if (candidate.fee_type === 'percentage') {
+    return (amountOrigin * feeValue) / 100
+  }
+
+  return feeValue
 }
 
 function toEstimate(values: RouteEstimate) {
