@@ -74,12 +74,6 @@ export function ClientOperationsWorkspace({ mode }: { mode: WorkspaceMode }) {
     return result
   }, [payments, refreshWalletSnapshot])
 
-  const handleConfirmOrderQuote = useCallback(async (...args: Parameters<typeof payments.confirmOrderQuote>) => {
-    const result = await payments.confirmOrderQuote(...args)
-    refreshWalletSnapshot()
-    return result
-  }, [payments, refreshWalletSnapshot])
-
   const handleCancelOrder = useCallback(async (...args: Parameters<typeof payments.cancelOrder>) => {
     const result = await payments.cancelOrder(...args)
     refreshWalletSnapshot()
@@ -212,7 +206,6 @@ export function ClientOperationsWorkspace({ mode }: { mode: WorkspaceMode }) {
                     activityLogs={payments.snapshot.activityLogs}
                     disabled={!canOperate}
                     onCancelOrder={handleCancelOrder}
-                    onConfirmOrderQuote={handleConfirmOrderQuote}
                     onUploadOrderFile={handleUploadOrderFile}
                     orders={payments.snapshot.paymentOrders}
                     suppliers={payments.snapshot.suppliers}

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
 import { format } from 'date-fns'
-import { CheckCircle2, ChevronDown, Download, FileText, FileUp, HandCoins, Search, ShieldAlert, XCircle } from 'lucide-react'
+import { ChevronDown, Download, FileText, FileUp, Search, ShieldAlert, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -31,7 +31,6 @@ interface PaymentsHistoryTableProps {
   activityLogs: ActivityLog[]
   disabled?: boolean
   onUploadOrderFile: (orderId: string, field: OrderFileField, file: File) => Promise<unknown>
-  onConfirmOrderQuote: (order: PaymentOrder) => Promise<unknown>
   onCancelOrder: (order: PaymentOrder) => Promise<unknown>
 }
 
@@ -41,7 +40,6 @@ export function PaymentsHistoryTable({
   activityLogs,
   disabled,
   onUploadOrderFile,
-  onConfirmOrderQuote,
   onCancelOrder,
 }: PaymentsHistoryTableProps) {
   const [files, setFiles] = useState<Record<string, Partial<Record<OrderFileField, File>>>>({})
@@ -143,19 +141,6 @@ export function PaymentsHistoryTable({
     }
   }
 
-  async function handleConfirmQuote(order: PaymentOrder) {
-    setBusyKey(`${order.id}-confirm-quote`)
-    try {
-      await onConfirmOrderQuote(order)
-      toast.success('Cotizacion aceptada. Tu orden ya entro en ejecucion.')
-    } catch (error) {
-      const message = getErrorMessage(error, 'No se pudo aceptar la cotizacion.')
-      toast.error(message)
-    } finally {
-      setBusyKey(null)
-    }
-  }
-
   return (
     <div className="space-y-4">
       <Card className="border-border/70 bg-background/85">
@@ -200,10 +185,8 @@ export function PaymentsHistoryTable({
         const supplier = order.supplier_id ? suppliersById.get(order.supplier_id) : null
         const canCancel = OPEN_ORDER_STATUSES.has(order.status)
         const openUploads = OPEN_ORDER_STATUSES.has(order.status)
-        const canConfirmQuote = order.status === 'deposit_received'
         const orderActivity = activityByOrderId.get(order.id) ?? []
         const quotePreparedAt = getMetadataDate(order.metadata, 'quote_prepared_at')
-        const quoteAcceptedAt = getMetadataDate(order.metadata, 'client_quote_accepted_at')
         const isExpanded = expandedOrders[order.id] ?? true
 
         return (
@@ -247,18 +230,6 @@ export function PaymentsHistoryTable({
                     <Download />
                     PDF
                   </Button>
-                  {canConfirmQuote ? (
-                    <Button
-                      className="h-11 min-w-52 bg-sky-600 text-white hover:bg-sky-700"
-                      disabled={disabled || busyKey === `${order.id}-confirm-quote` || !hasReadyQuote(order)}
-                      onClick={() => handleConfirmQuote(order)}
-                      size="lg"
-                      type="button"
-                    >
-                      <HandCoins />
-                      {busyKey === `${order.id}-confirm-quote` ? 'Aceptando...' : 'Aceptar cotizacion'}
-                    </Button>
-                  ) : null}
                   {canCancel ? (
                     <Button
                       disabled={disabled || busyKey === `${order.id}-cancel`}
@@ -286,7 +257,7 @@ export function PaymentsHistoryTable({
                   <InfoBlock label="Destino final" value={`${order.amount_converted} ${order.destination_currency}`} />
                 </div>
 
-                <QuoteCard order={order} quoteAcceptedAt={quoteAcceptedAt} quotePreparedAt={quotePreparedAt} />
+                <QuoteCard order={order} quotePreparedAt={quotePreparedAt} />
 
                 <div className="grid gap-4 lg:grid-cols-2">
                   <AttachmentPanel
@@ -304,18 +275,11 @@ export function PaymentsHistoryTable({
 
               <div className="space-y-4">
                 <ActionBrief order={order} />
-                {canConfirmQuote && !hasReadyQuote(order) ? (
+                {order.status === 'deposit_received' && !quotePreparedAt ? (
                   <NoticeCard
                     icon={ShieldAlert}
                     title="Esperando cotizacion final"
-                    description="Staff ya valido el deposito, pero aun debe cargar tasa, fee y monto final antes de que puedas autorizar la ejecucion."
-                  />
-                ) : null}
-                {canConfirmQuote && hasReadyQuote(order) ? (
-                  <NoticeCard
-                    icon={CheckCircle2}
-                    title="Tu aprobacion desbloquea la ejecucion"
-                    description="Este paso reemplaza el avance automatico a processing. La orden no seguira hasta que aceptes la cotizacion final."
+                    description="Staff ya valido el deposito y ahora debe publicar la cotizacion final con tasa, fee y monto real para mover la orden a processing."
                   />
                 ) : null}
               </div>
@@ -348,7 +312,7 @@ function StatusRail({ order }: { order: PaymentOrder }) {
   )
 }
 
-function QuoteCard({ order, quoteAcceptedAt, quotePreparedAt }: { order: PaymentOrder; quotePreparedAt: string | null; quoteAcceptedAt: string | null }) {
+function QuoteCard({ order, quotePreparedAt }: { order: PaymentOrder; quotePreparedAt: string | null }) {
   const quoteChanges = getQuoteChanges(order)
 
   return (
@@ -356,7 +320,7 @@ function QuoteCard({ order, quoteAcceptedAt, quotePreparedAt }: { order: Payment
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
           <div className="text-sm font-medium text-foreground">Cotizacion final</div>
-          <div className="text-xs text-muted-foreground">Lo que el cliente debe revisar antes de autorizar `processing`.</div>
+          <div className="text-xs text-muted-foreground">Valores finales publicados por staff para ejecutar la orden.</div>
         </div>
         <div className="flex flex-wrap gap-2">
           {quoteChanges.length > 0 ? <Badge variant="default">Actualizado por staff</Badge> : null}
@@ -384,13 +348,11 @@ function QuoteCard({ order, quoteAcceptedAt, quotePreparedAt }: { order: Payment
         />
       </div>
       <div className="mt-3 rounded-xl border border-dashed border-border/70 px-3 py-2 text-sm text-muted-foreground">
-        {quoteAcceptedAt
-          ? `Aceptada por el cliente el ${format(new Date(quoteAcceptedAt), 'dd/MM/yyyy HH:mm')}.`
-          : order.status === 'deposit_received'
-            ? 'Pendiente de aceptacion del cliente.'
-            : order.status === 'processing' || order.status === 'sent' || order.status === 'completed'
-              ? 'La cotizacion ya fue aceptada y la orden siguio su curso.'
-              : 'La cotizacion final aparecera despues de que staff valide el deposito.'}
+        {quotePreparedAt && (order.status === 'processing' || order.status === 'sent' || order.status === 'completed')
+          ? 'La cotizacion final ya fue publicada por staff y la orden siguio su curso.'
+          : quotePreparedAt
+            ? 'Cotizacion final publicada por staff.'
+            : 'La cotizacion final aparecera despues de que staff valide el deposito.'}
       </div>
     </div>
   )
@@ -616,11 +578,7 @@ function hasReachedStage(currentStatus: PaymentOrder['status'], stage: PaymentOr
   return currentIndex >= 0 && targetIndex >= 0 && currentIndex >= targetIndex
 }
 
-function hasReadyQuote(order: PaymentOrder) {
-  return Number(order.exchange_rate_applied) > 0 && Number(order.amount_converted) >= 0 && Number(order.fee_total) >= 0
-}
-
-function getMetadataDate(metadata: PaymentOrder['metadata'], key: 'quote_prepared_at' | 'client_quote_accepted_at') {
+function getMetadataDate(metadata: PaymentOrder['metadata'], key: 'quote_prepared_at') {
   if (!metadata || typeof metadata !== 'object' || !(key in metadata)) return null
   const value = metadata[key]
   return typeof value === 'string' && value ? value : null
@@ -639,9 +597,7 @@ function getNextActionMessage(order: PaymentOrder) {
         ? 'Tu comprobante ya fue cargado. Staff debe validar el deposito para continuar con la conciliacion y la cotizacion final.'
         : 'Staff debe validar el deposito para liberar la cotizacion final.'
     case 'deposit_received':
-      return hasReadyQuote(order)
-        ? 'Ya puedes aceptar la cotizacion final. Sin tu aprobacion la orden no avanza a processing.'
-        : 'Staff esta preparando la cotizacion final con fee y tipo de cambio reales.'
+      return 'Staff esta preparando la cotizacion final con fee y tipo de cambio reales.'
     case 'processing':
       return 'La orden ya esta autorizada y Guira esta coordinando la ejecucion sobre el riel externo.'
     case 'sent':
@@ -663,25 +619,11 @@ function humanizeActivity(action: string) {
       return 'Expediente creado'
     case 'payment_order_file_uploaded':
       return 'Archivo subido'
-    case 'payment_order_quote_accepted':
-      return 'Cotizacion aceptada'
     case 'payment_order_cancelled':
       return 'Expediente cancelado'
     default:
       return action
   }
-}
-
-function getErrorMessage(error: unknown, fallbackMessage: string) {
-  if (error instanceof Error && error.message) {
-    return error.message
-  }
-
-  if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
-    return error.message
-  }
-
-  return fallbackMessage
 }
 
 function getQuoteChanges(order: PaymentOrder) {

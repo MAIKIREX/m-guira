@@ -117,7 +117,7 @@ export const AdminService = {
     currency: string
     reason: string
   }) {
-    assertAdmin(args.actor)
+    assertPrivileged(args.actor)
     const supabase = createClient()
     const { data, error } = await supabase
       .from('fees_config')
@@ -146,7 +146,7 @@ export const AdminService = {
     value: unknown
     reason: string
   }) {
-    assertAdmin(args.actor)
+    assertPrivileged(args.actor)
     const supabase = createClient()
     const payload = { ...args.record, value: args.value }
     const { data, error } = await supabase.from('app_settings').upsert(payload).select('*').single()
@@ -170,7 +170,7 @@ export const AdminService = {
     payload: Record<string, unknown>
     reason: string
   }) {
-    assertAdmin(args.actor)
+    assertPrivileged(args.actor)
     const supabase = createClient()
     const action = args.payload.id ? 'update' : 'create'
     const { data, error } = await supabase.from('psav_configs').upsert(args.payload).select('*').single()
@@ -190,7 +190,7 @@ export const AdminService = {
   },
 
   async deletePsavConfig(args: { actor: StaffActor; record: PsavConfigRow; reason: string }) {
-    assertAdmin(args.actor)
+    assertPrivileged(args.actor)
     const supabase = createClient()
     const { error } = await supabase.from('psav_configs').delete().eq('id', args.record.id)
     if (error) throw error
@@ -210,6 +210,12 @@ export const AdminService = {
 function assertAdmin(actor: StaffActor) {
   if (actor.role !== 'admin') {
     throw new Error('Esta accion requiere rol admin.')
+  }
+}
+
+function assertPrivileged(actor: StaffActor) {
+  if (actor.role !== 'admin' && actor.role !== 'staff') {
+    throw new Error('Esta accion requiere rol admin o staff.')
   }
 }
 

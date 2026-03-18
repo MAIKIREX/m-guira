@@ -32,7 +32,6 @@ export function PaymentsPanel() {
     deleteSupplier,
     createOrder,
     uploadOrderFile,
-    confirmOrderQuote,
     cancelOrder,
   } = usePaymentsModule(user?.id)
 
@@ -41,7 +40,7 @@ export function PaymentsPanel() {
     return {
       active: orders.filter((order) => order.status !== 'completed' && order.status !== 'failed').length,
       waitingDeposit: orders.filter((order) => order.status === 'waiting_deposit').length,
-      pendingApproval: orders.filter((order) => order.status === 'deposit_received').length,
+      pendingQuote: orders.filter((order) => order.status === 'deposit_received').length,
       inFlight: orders.filter((order) => order.status === 'processing' || order.status === 'sent').length,
     }
   }, [snapshot?.paymentOrders])
@@ -81,7 +80,7 @@ export function PaymentsPanel() {
               <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">Mesa de operaciones</div>
               <CardTitle className="text-2xl tracking-tight">Tu dinero avanza por etapas visibles</CardTitle>
               <CardDescription>
-                La orden no entra en ejecucion hasta que exista expediente, deposito validado y aceptacion explicita de la cotizacion final.
+                La orden entra en ejecucion cuando ya existe expediente, staff valida el deposito y publica la cotizacion final.
               </CardDescription>
             </div>
             <Button onClick={reload} type="button" variant="outline">
@@ -117,7 +116,7 @@ export function PaymentsPanel() {
             <div className="grid gap-3 md:grid-cols-4">
               <MetricCard icon={WalletCards} label="Activas" value={String(metrics.active)} tone="neutral" />
               <MetricCard icon={ArrowRightLeft} label="Esperando deposito" value={String(metrics.waitingDeposit)} tone="warning" />
-              <MetricCard icon={ShieldCheck} label="Pendientes de tu aprobacion" value={String(metrics.pendingApproval)} tone="accent" />
+              <MetricCard icon={ShieldCheck} label="Pendientes de cotizacion" value={String(metrics.pendingQuote)} tone="accent" />
               <MetricCard icon={RefreshCw} label="En ejecucion" value={String(metrics.inFlight)} tone="success" />
             </div>
 
@@ -128,7 +127,7 @@ export function PaymentsPanel() {
                   'Orden creada',
                   'Fondeo y evidencia',
                   'Deposito validado',
-                  'Aceptacion del cliente',
+                  'Cotizacion staff',
                   'Ejecucion y cierre',
                 ].map((label, index) => (
                   <div key={label} className="rounded-xl border border-border/60 bg-muted/20 px-3 py-3 text-sm">
@@ -172,7 +171,6 @@ export function PaymentsPanel() {
             activityLogs={snapshot.activityLogs}
             disabled={!canOperate}
             onCancelOrder={cancelOrder}
-            onConfirmOrderQuote={confirmOrderQuote}
             onUploadOrderFile={uploadOrderFile}
             orders={snapshot.paymentOrders}
             suppliers={snapshot.suppliers}

@@ -128,12 +128,6 @@ export function usePaymentsModule(userId?: string) {
     return result.order
   }, [mergeOrder, snapshot?.paymentOrders, userId])
 
-  const confirmOrderQuote = useCallback(async (order: PaymentOrder) => {
-    const updatedOrder = await PaymentsService.confirmOrderQuote(order)
-    mergeOrder(updatedOrder)
-    return updatedOrder
-  }, [mergeOrder])
-
   const cancelOrder = useCallback(async (order: PaymentOrder) => {
     const updatedOrder = await PaymentsService.cancelOrder(order)
     mergeOrder(updatedOrder)
@@ -150,7 +144,6 @@ export function usePaymentsModule(userId?: string) {
     deleteSupplier,
     createOrder,
     uploadOrderFile,
-    confirmOrderQuote,
     cancelOrder,
   }
 }

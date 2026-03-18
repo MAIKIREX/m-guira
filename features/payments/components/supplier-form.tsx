@@ -21,6 +21,7 @@ import {
   parseSupplierPaymentMethods,
   serializeSupplierPaymentMethods,
 } from '@/features/payments/lib/supplier-methods'
+import { CRYPTO_NETWORK_OPTIONS, resolveCryptoNetwork } from '@/features/payments/lib/crypto-networks'
 import type { Supplier } from '@/types/supplier'
 import type { SupplierUpsertInput } from '@/types/payment-order'
 
@@ -59,21 +60,6 @@ const paymentMethodOptions = [
   { value: 'ach', label: 'ACH' },
   { value: 'swift', label: 'SWIFT' },
 ] as const
-
-const cryptoNetworkOptions = [
-  'Ethereum',
-  'Polygon',
-  'Arbitrum',
-  'Optimism',
-  'Base',
-  'Solana',
-  'Tron',
-  'BSC',
-] as const
-
-function resolveCryptoNetwork(network?: string) {
-  return cryptoNetworkOptions.find((option) => option === network) ?? 'Polygon'
-}
 
 export function SupplierForm({
   userId,
@@ -476,7 +462,7 @@ export function SupplierForm({
                             <SelectValue placeholder="Selecciona una red" />
                           </SelectTrigger>
                           <SelectContent>
-                            {cryptoNetworkOptions.map((network) => (
+                            {CRYPTO_NETWORK_OPTIONS.map((network) => (
                               <SelectItem key={network} value={network}>
                                 {network}
                               </SelectItem>

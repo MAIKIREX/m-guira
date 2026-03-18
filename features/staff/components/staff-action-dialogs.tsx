@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import {
@@ -206,12 +207,20 @@ export function SupportTicketActions({ actor, onUpdated, ticket }: { actor: Staf
 }
 
 export function OrderActions({ actor, onUpdated, order }: { actor: StaffActor; onUpdated: (order: PaymentOrder) => Promise<void> | void; order: PaymentOrder }) {
-  const actions = new Set(getOrderActions(order.status))
+  const actions = new Set(getOrderActions(order))
   if (actions.size === 0) return null
 
   return (
     <div className="flex flex-wrap justify-end gap-2">
-      {actions.has('deposit_received') ? <OrderReasonActionDialog actor={actor} action="deposit_received" label="Validar deposito del cliente" onUpdated={onUpdated} order={order} /> : null}
+      {actions.has('deposit_received') ? (
+        <OrderReasonActionDialog
+          actor={actor}
+          action="deposit_received"
+          label="Validar deposito del cliente"
+          onUpdated={onUpdated}
+          order={order}
+        />
+      ) : null}
       {actions.has('quote') ? <OrderQuoteDialog actor={actor} onUpdated={onUpdated} order={order} /> : null}
       {actions.has('sent') ? <OrderSentDialog actor={actor} onUpdated={onUpdated} order={order} /> : null}
       {actions.has('completed') ? <OrderCompletionDialog actor={actor} onUpdated={onUpdated} order={order} /> : null}
@@ -306,7 +315,7 @@ export function OrderDetailDialog({ actor, onUpdated, order }: { actor: StaffAct
   )
 }
 
-function OrderReasonActionDialog({ actor, action, label, onUpdated, order }: { actor: StaffActor; action: 'deposit_received' | 'failed'; label: string; onUpdated: (order: PaymentOrder) => Promise<void> | void; order: PaymentOrder }) {
+function OrderReasonActionDialog({ actor, action, blockedReason, label, onUpdated, order }: { actor: StaffActor; action: 'deposit_received' | 'failed'; blockedReason?: string | null; label: string; onUpdated: (order: PaymentOrder) => Promise<void> | void; order: PaymentOrder }) {
   const [open, setOpen] = useState(false)
   const form = useForm<{ reason: string }>({ resolver: zodResolver(staffReasonSchema), defaultValues: { reason: '' } })
 
@@ -333,11 +342,15 @@ function OrderReasonActionDialog({ actor, action, label, onUpdated, order }: { a
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="sm" variant="outline" />}>{label}</DialogTrigger>
+      <DialogTrigger render={<Button disabled={Boolean(blockedReason)} size="sm" variant="outline" />}>{label}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{label}</DialogTitle>
-          <DialogDescription>La accion usa optimistic lock, registra auditoria y notifica al cliente cuando el deposito queda validado por staff.</DialogDescription>
+          <DialogDescription>
+            {blockedReason
+              ? `${blockedReason} Sube o verifica el archivo antes de continuar.`
+              : 'La accion usa optimistic lock, registra auditoria y notifica al cliente cuando el deposito queda validado por staff.'}
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form className="space-y-4" onSubmit={form.handleSubmit(submit)}>
@@ -366,7 +379,7 @@ function OrderQuoteDialog({ actor, onUpdated, order }: { actor: StaffActor; onUp
   async function submit(values: StaffOrderProcessingValues) {
     try {
       const updatedOrder = await StaffService.preparePaymentOrderQuote({ actor, order, reason: values.reason, exchangeRateApplied: values.exchange_rate_applied, amountConverted: values.amount_converted, feeTotal: values.fee_total })
-      toast.success('Cotizacion final publicada para el cliente.')
+      toast.success('Cotizacion final publicada y orden movida a processing.')
       setOpen(false)
       await onUpdated(updatedOrder)
     } catch (error) {
@@ -381,7 +394,7 @@ function OrderQuoteDialog({ actor, onUpdated, order }: { actor: StaffActor; onUp
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Publicar cotizacion final</DialogTitle>
-          <DialogDescription>Define la tasa real, el monto final y la comision. El cliente debera aceptar esta cotizacion para pasar a `processing`.</DialogDescription>
+          <DialogDescription>Define la tasa real, el monto final y la comision. Al publicarla, la orden pasa inmediatamente a `processing`.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form className="space-y-4" onSubmit={form.handleSubmit(submit)}>
@@ -486,8 +499,8 @@ function OrderCompletionDialog({ actor, onUpdated, order }: { actor: StaffActor;
         <Form {...form}>
           <form className="space-y-4" onSubmit={form.handleSubmit(submit)}>
             <div className="space-y-2">
-              <FormLabel>Comprobante final</FormLabel>
-              <Input accept={ACCEPTED_UPLOADS} onChange={(event) => setFile(event.target.files?.[0] ?? null)} type="file" />
+              <Label htmlFor="staff-order-completion-file">Comprobante final</Label>
+              <Input id="staff-order-completion-file" accept={ACCEPTED_UPLOADS} onChange={(event) => setFile(event.target.files?.[0] ?? null)} type="file" />
             </div>
             <FormField control={form.control} name="reason" render={({ field }) => (
               <FormItem>
@@ -516,9 +529,10 @@ function ProcessingNumberField({ control, label, name }: { control: Control<Staf
   )
 }
 
-function getOrderActions(status: PaymentOrder['status']) {
-  switch (status) {
+function getOrderActions(order: PaymentOrder) {
+  switch (order.status) {
     case 'created':
+      return requiresClientEvidence(order) ? ['failed'] as const : ['deposit_received', 'failed'] as const
     case 'waiting_deposit':
       return ['deposit_received', 'failed'] as const
     case 'deposit_received':
@@ -530,6 +544,10 @@ function getOrderActions(status: PaymentOrder['status']) {
     default:
       return [] as const
   }
+}
+
+function requiresClientEvidence(order: PaymentOrder) {
+  return order.order_type === 'WORLD_TO_BO' || order.order_type === 'US_TO_WALLET'
 }
 
 function getOnboardingActionLabel(status: StaffOnboardingActionValues['status']) {

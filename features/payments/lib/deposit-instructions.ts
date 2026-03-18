@@ -10,6 +10,13 @@ export interface DepositInstruction {
   kind: InstructionKind
   detail: string
   accent?: string
+  qrUrl?: string
+  bankCard?: {
+    bankName: string
+    accountHolder: string
+    accountNumber: string
+    country: string
+  }
 }
 
 export interface RouteEstimate {
@@ -33,7 +40,7 @@ export function estimateRouteValues(args: {
   const parallelBuyRate = findNumericSetting(args.appSettings, 'parallel_buy_rate') ?? legacyRate
   const parallelSellRate = findNumericSetting(args.appSettings, 'parallel_sell_rate') ?? legacyRate
 
-  const baseFeeTotal = resolveFeeTotal(args.feesConfig, amountOrigin)
+  const baseFeeTotal = resolveFeeTotal(args.feesConfig, amountOrigin, args.route)
 
   // 2. Determinar que tasa base aplicar segun la direccion de la operacion
   // bo_to_world -> compra de dolares -> parallel_buy_rate
@@ -144,12 +151,14 @@ export function buildDepositInstructions(args: {
 
 function getPsavInstructions(psavConfigs: PsavConfigRow[]) {
   return psavConfigs.slice(0, 3).map((record, index) => {
-    const provider = readString(record, ['provider_name', 'name']) || `PSAV ${index + 1}`
-    const accountReference = readString(record, ['account_reference', 'reference', 'account']) || 'Sin referencia documentada'
+    // 1. Preferir campos de primer nivel, luego fallback a metadata o strings genericos
+    const provider = record.name || readString(record as Record<string, unknown>, ['provider_name']) || `PSAV ${index + 1}`
+    const accountReference = record.account_number || readString(record as Record<string, unknown>, ['account_reference', 'reference', 'account']) || 'Sin referencia'
+    
     const metadata = readMetadata(record)
     const country = readString(metadata, ['country', 'label'])
     const accountName = readString(metadata, ['account_name', 'holder_name'])
-    const bankName = readString(metadata, ['bank_name'])
+    const bankName = record.bank_name || readString(metadata, ['bank_name'])
 
     return {
       id: `psav-${record.id}`,
@@ -157,6 +166,13 @@ function getPsavInstructions(psavConfigs: PsavConfigRow[]) {
       kind: 'bank' as const,
       detail: [bankName, accountName, accountReference, country].filter(Boolean).join(' | '),
       accent: 'sky',
+      qrUrl: record.qr_url,
+      bankCard: {
+        bankName: bankName || 'Banco no configurado',
+        accountHolder: accountName || provider,
+        accountNumber: accountReference || 'Sin cuenta configurada',
+        country: country || String(record.currency ?? 'BO'),
+      },
     }
   })
 }
@@ -193,17 +209,20 @@ function findNumericSetting(settings: AppSettingRow[], key: string) {
   return null
 }
 
-function resolveFeeTotal(fees: FeeConfigRow[], amountOrigin: number) {
-  // 1. Intentar encontrar la comision de pago a proveedores (que es la principal documentada)
-  // o caer en la primera comision valida si no existe
-  const candidate = fees.find((fee) => fee.type === 'supplier_payment') || fees[0]
+function resolveFeeTotal(fees: FeeConfigRow[], amountOrigin: number, route: SupportedPaymentRoute) {
+  // 1. Intentar encontrar la comision segun la ruta, o cae en supplier_payment, o la primera
+  const routeType = route === 'bolivia_to_exterior' ? 'supplier_payment' : 'wallet_funding'
+  const candidate = fees.find((fee) => fee.type === routeType) || 
+                   fees.find((fee) => fee.type === 'supplier_payment') || 
+                   fees[0]
   
-  if (!candidate) return 15 // Fallback historico
+  if (!candidate) return 15 // Fallback historico (monto fijo $15)
 
   // Convertir el valor a numero (Supabase devuelve numeric como string a veces)
-  const feeValue = typeof candidate.value === 'string' 
-    ? parseFloat(candidate.value) 
-    : (typeof candidate.value === 'number' ? candidate.value : 0)
+  const rawValue = candidate.value
+  const feeValue = typeof rawValue === 'string' 
+    ? parseFloat(rawValue.replace(',', '.')) 
+    : (typeof rawValue === 'number' ? rawValue : 0)
 
   if (candidate.fee_type === 'percentage') {
     return (amountOrigin * feeValue) / 100

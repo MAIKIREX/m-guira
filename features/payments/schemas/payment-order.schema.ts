@@ -43,6 +43,14 @@ export const paymentOrderSchema = z
       })
     }
 
+    if ((value.route === 'bolivia_to_exterior' || value.route === 'crypto_to_crypto') && !value.supplier_id) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Selecciona un proveedor o beneficiario antes de continuar.',
+        path: ['supplier_id'],
+      })
+    }
+
     if (value.route === 'bolivia_to_exterior' && !value.ui_method_group) {
       ctx.addIssue({
         code: 'custom',

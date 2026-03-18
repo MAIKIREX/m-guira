@@ -63,7 +63,7 @@ export const StaffService = {
       gaps: [
         'La tabla `payin_routes` se mantiene en modo solo lectura porque la documentacion no detalla sus columnas ni flujo de estados.',
         'La tab de `transfers` se mantiene sin acciones porque la documentacion no define transiciones de estado suficientes para mutarla con seguridad.',
-        'El paso `deposit_received -> processing` ahora requiere aceptacion explicita del cliente, alineado a `FLUJO_Y_VALOR.md`.',
+        'El paso `deposit_received -> processing` ocurre cuando staff publica la cotizacion final.',
       ],
     }
   },
@@ -158,6 +158,14 @@ export const StaffService = {
   },
 
   async advancePaymentOrderToDepositReceived(args: { actor: StaffActor; order: PaymentOrder; reason: string }) {
+    if (requiresClientEvidence(args.order) && !args.order.evidence_url) {
+      throw new Error('No puedes validar el deposito sin el comprobante del cliente.')
+    }
+
+    if (requiresClientEvidence(args.order) && args.order.status !== 'waiting_deposit') {
+      throw new Error('La orden debe pasar primero a waiting_deposit antes de que staff valide el deposito.')
+    }
+
     return updatePaymentOrderWithAuditAndNotification({ actor: args.actor, order: args.order, nextStatus: 'deposit_received', updates: { status: 'deposit_received' }, reason: args.reason, notificationMessage: 'Staff valido tu deposito y el expediente continua a conciliacion.' })
   },
 
@@ -179,6 +187,7 @@ export const StaffService = {
     }
 
     const payload = {
+      status: 'processing' as const,
       exchange_rate_applied: args.exchangeRateApplied,
       amount_converted: args.amountConverted,
       fee_total: args.feeTotal,
@@ -198,7 +207,7 @@ export const StaffService = {
 
     try {
       await insertAuditLog({ actor: args.actor, tableName: 'payment_orders', recordId: args.order.id, previousValues: pickRecordFields(args.order), newValues: pickRecordFields(updatedOrder), reason: args.reason, action: 'update' })
-      await insertNotification({ userId: args.order.user_id, type: 'status_change', title: 'Cotizacion final lista', message: 'Tu orden ya tiene tasa y comision final. Revisa y acepta para continuar.', link: '/pagos' })
+      await insertNotification({ userId: args.order.user_id, type: 'status_change', title: 'Orden en ejecucion', message: 'Staff publico la cotizacion final y tu orden ya paso a processing.', link: '/pagos' })
       return updatedOrder as PaymentOrder
     } catch (error) {
       await rollbackPaymentOrderChange(updatedOrder as PaymentOrder, args.order)
@@ -267,6 +276,10 @@ export const StaffService = {
       throw error
     }
   },
+}
+
+function requiresClientEvidence(order: PaymentOrder) {
+  return order.order_type === 'WORLD_TO_BO' || order.order_type === 'US_TO_WALLET'
 }
 
 async function updatePaymentOrderWithAuditAndNotification(args: { actor: StaffActor; order: PaymentOrder; nextStatus: PaymentOrder['status']; updates: Partial<PaymentOrder>; reason: string; notificationMessage: string }) {

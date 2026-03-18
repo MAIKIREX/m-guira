@@ -77,7 +77,7 @@ export interface FeeConfigRow {
   id: string
   type: string
   fee_type: string
-  value: number
+  value: string | number
   currency: string
 }
 
@@ -160,4 +160,3 @@ export interface SupplierUpsertInput {
   email: string
   tax_id: string
 }
-

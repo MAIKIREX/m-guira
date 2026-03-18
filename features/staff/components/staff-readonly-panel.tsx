@@ -90,6 +90,7 @@ export function StaffReadonlyPanel() {
 
   const actor: StaffActor = { userId: user.id, role: profile.role }
   const isAdmin = actor.role === 'admin'
+  const isPrivileged = actor.role === 'admin' || actor.role === 'staff'
 
   return (
     <div className="space-y-6">
@@ -98,9 +99,9 @@ export function StaffReadonlyPanel() {
           <CardHeader className="gap-4 border-b border-border/60 bg-background/95 md:flex-row md:items-start md:justify-between">
             <div className="space-y-2">
               <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">Centro de control interno</div>
-              <CardTitle className="text-2xl tracking-tight">Staff valida, cliente autoriza, admin gobierna</CardTitle>
+              <CardTitle className="text-2xl tracking-tight">Staff valida, ejecuta y admin gobierna</CardTitle>
               <CardDescription>
-                Este panel concentra revisiones, cambios de estado y auditoria. El paso a `processing` ahora depende de aceptacion explicita del cliente.
+                Este panel concentra revisiones, cambios de estado y auditoria. Cuando staff publica la cotizacion final, la orden pasa a `processing`.
               </CardDescription>
             </div>
             <Button onClick={reload} type="button" variant="outline">
@@ -137,7 +138,7 @@ export function StaffReadonlyPanel() {
               />
               <RoleCard
                 title="Cliente"
-                body="Acepta la cotizacion final desde su panel; sin ese paso la orden no entra a processing."
+                body="Sigue el expediente, descarga respaldos y recibe el avance del staff desde su panel."
               />
               <RoleCard
                 title="Admin"
@@ -160,7 +161,7 @@ export function StaffReadonlyPanel() {
         </TabsList>
 
         <TabsContent value="overview">
-          <OverviewPanel auditCount={snapshot.auditLogs.length} isAdmin={isAdmin} />
+          <OverviewPanel auditCount={snapshot.auditLogs.length} isAdmin={isAdmin} isPrivileged={isPrivileged} />
         </TabsContent>
         <TabsContent value="onboarding">
           <OnboardingTable records={snapshot.onboarding} />
@@ -188,10 +189,10 @@ export function StaffReadonlyPanel() {
           <UsersTable actor={actor} isAdmin={isAdmin} onAddUser={addUser} onChangeUser={replaceUser} onRemoveUser={removeUser} users={snapshot.users} />
         </TabsContent>
         <TabsContent value="config">
-          <ConfigPanel actor={actor} appSettings={snapshot.appSettings} feesConfig={snapshot.feesConfig} isAdmin={isAdmin} onUpdateAppSetting={replaceAppSetting} onUpdateFeeConfig={replaceFeeConfig} />
+          <ConfigPanel actor={actor} appSettings={snapshot.appSettings} feesConfig={snapshot.feesConfig} isPrivileged={isPrivileged} onUpdateAppSetting={replaceAppSetting} onUpdateFeeConfig={replaceFeeConfig} />
         </TabsContent>
         <TabsContent value="psav">
-          <PsavPanel actor={actor} isAdmin={isAdmin} onChangeRecord={(record, mode) => {
+          <PsavPanel actor={actor} isPrivileged={isPrivileged} onChangeRecord={(record, mode) => {
             if (mode === 'remove' && record) {
               removePsavConfig(record.id)
               return
@@ -228,14 +229,14 @@ function RoleCard({ title, body }: { title: string; body: string }) {
   )
 }
 
-function OverviewPanel({ auditCount, isAdmin }: { auditCount: number; isAdmin: boolean }) {
+function OverviewPanel({ auditCount, isAdmin, isPrivileged }: { auditCount: number; isAdmin: boolean; isPrivileged: boolean }) {
   return (
     <div className="grid gap-4 xl:grid-cols-3">
       <RoleCard title="1. Onboarding" body="Aqui se verifica, rechaza o pide cambios al KYC/KYB antes de operar." />
-      <RoleCard title="2. Orders" body="Aqui staff valida depositos y publica cotizacion final; luego el cliente aprueba y staff solo continua con sent/completed." />
+      <RoleCard title="2. Orders" body="Aqui staff valida depositos, publica la cotizacion final y con eso la orden entra a processing antes de seguir con sent/completed." />
       <RoleCard title="3. Audit" body={`La auditoria ya no queda escondida: tienes ${auditCount} eventos visibles en la tab Audit para seguimiento.`} />
       <RoleCard title="4. Support" body="Los tickets se mueven con motivo y notificacion al cliente desde su tab dedicada." />
-      <RoleCard title="5. Admin tools" body={isAdmin ? 'Tienes disponibles Users, Config y PSAV para gobierno del sistema.' : 'Estas herramientas existen, pero solo se habilitan con rol admin.'} />
+      <RoleCard title="5. Admin tools" body={isPrivileged ? 'Tienes disponibles Users (solo admin), Config y PSAV para gestion.' : 'Estas herramientas existen, pero solo se habilitan con rol admin.'} />
       <RoleCard title="6. Rieles no cerrados" body="Payins y Transfers siguen en solo lectura hasta que el contrato documental defina columnas y transiciones seguras." />
     </div>
   )
@@ -408,7 +409,7 @@ function OrdersTable({ actor, onUpdated, orders }: { actor: StaffActor; onUpdate
     <Card>
       <CardHeader>
         <CardTitle>Payment orders</CardTitle>
-        <CardDescription>Staff revisa respaldo y comprobante del cliente, valida el deposito y luego publica la cotizacion final.</CardDescription>
+        <CardDescription>Staff revisa respaldo y comprobante del cliente, valida el deposito y publica la cotizacion final para mover la orden a processing.</CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
@@ -440,7 +441,7 @@ function OrdersTable({ actor, onUpdated, orders }: { actor: StaffActor; onUpdate
                     <div className="space-y-1">
                       <StatusBadge value={order.status} />
                       {order.status === 'deposit_received' ? (
-                        <div className="text-xs text-muted-foreground">Pendiente de cotizacion o aprobacion del cliente.</div>
+                        <div className="text-xs text-muted-foreground">Pendiente de cotizacion final.</div>
                       ) : null}
                     </div>
                   </TableCell>
@@ -590,14 +591,14 @@ function ConfigPanel({
   actor,
   appSettings,
   feesConfig,
-  isAdmin,
+  isPrivileged,
   onUpdateAppSetting,
   onUpdateFeeConfig,
 }: {
   actor: StaffActor
   appSettings: AppSettingRow[]
   feesConfig: FeeConfigRow[]
-  isAdmin: boolean
+  isPrivileged: boolean
   onUpdateAppSetting: (record: AppSettingRow) => void
   onUpdateFeeConfig: (record: FeeConfigRow) => void
 }) {
@@ -619,7 +620,7 @@ function ConfigPanel({
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          {!isAdmin ? <div className="p-6"><AdminOnlyNotice /></div> : null}
+          {!isPrivileged ? <div className="p-6"><AdminOnlyNotice /></div> : null}
           <Table>
             <TableHeader className="bg-muted/30">
               <TableRow className="hover:bg-transparent border-none">
@@ -651,7 +652,7 @@ function ConfigPanel({
                     </TableCell>
                     <TableCell className="py-4 pr-6 text-right">
                       <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                        {isAdmin ? <FeeConfigDialog actor={actor} onUpdated={onUpdateFeeConfig} record={record} /> : null}
+                        {isPrivileged ? <FeeConfigDialog actor={actor} onUpdated={onUpdateFeeConfig} record={record} /> : null}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -678,7 +679,7 @@ function ConfigPanel({
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          {!isAdmin ? <div className="p-6"><AdminOnlyNotice /></div> : null}
+          {!isPrivileged ? <div className="p-6"><AdminOnlyNotice /></div> : null}
           <Table>
             <TableHeader className="bg-muted/30">
               <TableRow className="hover:bg-transparent border-none">
@@ -710,7 +711,7 @@ function ConfigPanel({
                       </TableCell>
                       <TableCell className="py-4 pr-6 text-right">
                         <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                          {isAdmin ? <AppSettingDialog actor={actor} onUpdated={onUpdateAppSetting} record={record} /> : null}
+                          {isPrivileged ? <AppSettingDialog actor={actor} onUpdated={onUpdateAppSetting} record={record} /> : null}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -725,7 +726,7 @@ function ConfigPanel({
   )
 }
 
-function PsavPanel({ actor, isAdmin, onChangeRecord, records }: { actor: StaffActor; isAdmin: boolean; onChangeRecord: (record: PsavConfigRow | null, mode: 'replace' | 'remove') => void; records: PsavConfigRow[] }) {
+function PsavPanel({ actor, isPrivileged, onChangeRecord, records }: { actor: StaffActor; isPrivileged: boolean; onChangeRecord: (record: PsavConfigRow | null, mode: 'replace' | 'remove') => void; records: PsavConfigRow[] }) {
   return (
     <Card className="border-border/60 bg-background/95 shadow-sm">
       <CardHeader className="gap-3 md:flex-row md:items-center md:justify-between border-b border-border/40 pb-6">
@@ -735,12 +736,12 @@ function PsavPanel({ actor, isAdmin, onChangeRecord, records }: { actor: StaffAc
             Configuración de rutas de depósito directo para usuarios.
           </CardDescription>
         </div>
-        {isAdmin ? (
+        {isPrivileged ? (
           <PsavCreateDialog actor={actor} onUpdated={onChangeRecord} />
         ) : null}
       </CardHeader>
       <CardContent className="p-0">
-        {!isAdmin ? <div className="p-6"><AdminOnlyNotice /></div> : null}
+        {!isPrivileged ? <div className="p-6"><AdminOnlyNotice /></div> : null}
         
         <Table>
           <TableHeader className="bg-muted/30">
@@ -760,7 +761,7 @@ function PsavPanel({ actor, isAdmin, onChangeRecord, records }: { actor: StaffAc
                   <div className="flex flex-col items-center justify-center space-y-2 text-muted-foreground">
                     <CircleDollarSign className="size-8 opacity-20" />
                     <p className="text-sm font-medium">No hay configuraciones PSAV</p>
-                    <p className="text-xs">Usa el botón "Nuevo PSAV" para empezar.</p>
+                    <p className="text-xs">Usa el boton &quot;Nuevo PSAV&quot; para empezar.</p>
                   </div>
                 </TableCell>
               </TableRow>
@@ -869,4 +870,3 @@ function formatDate(value?: string) {
   if (!value) return 'Sin fecha'
   return format(new Date(value), 'dd/MM/yyyy HH:mm')
 }
-
