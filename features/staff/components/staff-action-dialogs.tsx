@@ -242,13 +242,15 @@ function getPaymentStatusColor(status: string) {
 
 export function OrderDetailDialog({ actor, onUpdated, order }: { actor: StaffActor; onUpdated: (order: PaymentOrder) => Promise<void> | void; order: PaymentOrder }) {
   const meta = order.metadata as import('@/types/payment-order').PaymentOrderMetadata | undefined
+  const destinationInfo = buildOrderDestinationInfo(meta)
+
   return (
     <Dialog>
       <DialogTrigger render={<Button size="sm" variant="secondary" />}>Gestionar Orden</DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader className="mb-2">
           <div className="flex items-center justify-between">
-            <DialogTitle>Gestión de Orden #{order.id.slice(0, 8)}</DialogTitle>
+            <DialogTitle>Gestion de Orden #{order.id.slice(0, 8)}</DialogTitle>
             <span className={"text-xs px-3 py-1 font-semibold uppercase rounded " + getPaymentStatusColor(order.status)}>
               {order.status}
             </span>
@@ -263,47 +265,56 @@ export function OrderDetailDialog({ actor, onUpdated, order }: { actor: StaffAct
               <div><span className="text-muted-foreground block text-xs">Tipo de Orden</span> <span className="font-medium">{order.order_type}</span></div>
               <div><span className="text-muted-foreground block text-xs">Riel de Proc.</span> <span className="font-medium">{order.processing_rail}</span></div>
               <div>
-                <span className="text-muted-foreground block text-xs">Monto Origen</span> 
+                <span className="text-muted-foreground block text-xs">Monto Origen</span>
                 <span className="font-medium text-lg">{order.amount_origin} {order.origin_currency}</span>
               </div>
               {order.amount_converted > 0 && (
                 <div>
-                  <span className="text-muted-foreground block text-xs">Monto Convertido</span> 
+                  <span className="text-muted-foreground block text-xs">Monto Convertido</span>
                   <span className="font-medium text-lg text-emerald-600">{order.amount_converted} {order.destination_currency}</span>
                 </div>
               )}
             </div>
           </div>
 
-          {(meta?.swift_details || meta?.ach_details || meta?.crypto_destination) && (
-            <div className="space-y-3">
-              <h4 className="font-semibold uppercase tracking-wider text-muted-foreground border-b pb-1 text-xs">Información de Destino</h4>
-              <pre className="p-3 bg-muted/40 rounded-lg overflow-x-auto text-xs font-mono">
-                {JSON.stringify(meta.swift_details || meta.ach_details || meta.crypto_destination, null, 2)}
-              </pre>
-            </div>
-          )}
+          <div className="space-y-3">
+            <h4 className="font-semibold uppercase tracking-wider text-muted-foreground border-b pb-1 text-xs">Informacion de Destino</h4>
+            {destinationInfo.length > 0 ? (
+              <div className="grid gap-3 md:grid-cols-2">
+                {destinationInfo.map((item) => (
+                  <div key={item.label} className="rounded-xl border border-border/60 bg-muted/20 px-3 py-3">
+                    <span className="text-muted-foreground block text-xs">{item.label}</span>
+                    <span className="mt-1 block font-medium break-words">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-border/60 bg-muted/10 px-3 py-3 text-xs text-muted-foreground">
+                Esta orden todavia no tiene informacion de destino registrada en metadata.
+              </div>
+            )}
+          </div>
 
           <div className="space-y-3">
             <h4 className="font-semibold uppercase tracking-wider text-muted-foreground border-b pb-1 text-xs">Respaldo y comprobantes</h4>
             <div className="grid gap-2">
               {order.evidence_url ? (
                 <a href={order.evidence_url} target="_blank" rel="noreferrer" className="flex items-center text-blue-600 hover:underline">
-                  📄 Ver Comprobante de Depósito (Cliente)
+                  Ver Comprobante de Deposito (Cliente)
                 </a>
               ) : (
-                <span className="text-muted-foreground text-xs">Sin comprobante de depósito.</span>
+                <span className="text-muted-foreground text-xs">Sin comprobante de deposito.</span>
               )}
               {order.support_document_url ? (
                 <a href={order.support_document_url} target="_blank" rel="noreferrer" className="flex items-center text-blue-600 hover:underline">
-                  📄 Ver Documento de Respaldo
+                  Ver Documento de Respaldo
                 </a>
               ) : (
                 <span className="text-muted-foreground text-xs">Sin respaldo documental.</span>
               )}
               {order.staff_comprobante_url ? (
                 <a href={order.staff_comprobante_url} target="_blank" rel="noreferrer" className="flex items-center text-green-600 hover:underline">
-                  ✅ Comprobante Final (Staff)
+                  Comprobante Final (Staff)
                 </a>
               ) : null}
             </div>
@@ -319,6 +330,117 @@ export function OrderDetailDialog({ actor, onUpdated, order }: { actor: StaffAct
   )
 }
 
+function buildOrderDestinationInfo(meta?: import('@/types/payment-order').PaymentOrderMetadata) {
+  if (!meta) return []
+
+  const items: Array<{ label: string; value: string }> = []
+  const push = (label: string, value: unknown) => {
+    if (typeof value !== 'string') return
+    const normalized = value.trim()
+    if (!normalized) return
+    items.push({ label, value: normalized })
+  }
+
+  push('Ruta', humanizeOrderRoute(meta.route))
+  push('Metodo de entrega', humanizeDeliveryMethod(meta.delivery_method))
+  push('Variante de recepcion', humanizeReceiveVariant(meta.receive_variant))
+  push('Canal de salida', humanizeUiMethodGroup(meta.ui_method_group))
+  push('Destino declarado', meta.destination_address)
+  push('Motivo del pago', meta.payment_reason)
+  push('Funding method', humanizeFundingMethod(meta.funding_method))
+  push('Fuente de instrucciones', humanizeInstructionSource(meta.instructions_source))
+  push('Stablecoin', meta.stablecoin)
+  push('Wallet destino', meta.crypto_destination?.address)
+  push('Red', meta.crypto_destination?.network)
+  push('Banco destino', meta.ach_details?.bankName ?? meta.swift_details?.bankName)
+  push('Cuenta / IBAN', meta.swift_details?.iban ?? meta.ach_details?.accountNumber)
+  push('Routing number', meta.ach_details?.routingNumber)
+  push('Codigo SWIFT', meta.swift_details?.swiftCode)
+  push('Pais del banco', meta.swift_details?.country)
+  push('Direccion del banco', meta.swift_details?.bankAddress)
+
+  return items
+}
+
+function humanizeOrderRoute(route?: import('@/types/payment-order').PaymentOrderMetadata['route']) {
+  switch (route) {
+    case 'bolivia_to_exterior':
+      return 'Bolivia al exterior'
+    case 'us_to_bolivia':
+      return 'Exterior a Bolivia'
+    case 'us_to_wallet':
+      return 'USA a wallet'
+    case 'crypto_to_crypto':
+      return 'Crypto a crypto'
+    default:
+      return ''
+  }
+}
+
+function humanizeDeliveryMethod(method?: import('@/types/payment-order').DeliveryMethod) {
+  switch (method) {
+    case 'swift':
+      return 'SWIFT'
+    case 'ach':
+      return 'ACH'
+    case 'crypto':
+      return 'Crypto'
+    default:
+      return ''
+  }
+}
+
+function humanizeReceiveVariant(variant?: import('@/types/payment-order').ReceiveVariant) {
+  switch (variant) {
+    case 'bank_account':
+      return 'Cuenta bancaria'
+    case 'bank_qr':
+      return 'QR bancario'
+    case 'wallet':
+      return 'Wallet'
+    default:
+      return ''
+  }
+}
+
+function humanizeUiMethodGroup(group?: import('@/types/payment-order').UiMethodGroup) {
+  switch (group) {
+    case 'bank':
+      return 'Banco'
+    case 'crypto':
+      return 'Crypto'
+    default:
+      return ''
+  }
+}
+
+function humanizeFundingMethod(method?: import('@/types/payment-order').FundingMethod) {
+  switch (method) {
+    case 'bs':
+      return 'Bolivianos'
+    case 'crypto':
+      return 'Crypto'
+    case 'ach':
+      return 'ACH'
+    case 'wallet':
+      return 'Wallet'
+    default:
+      return ''
+  }
+}
+
+function humanizeInstructionSource(source?: import('@/types/payment-order').PaymentOrderMetadata['instructions_source']) {
+  switch (source) {
+    case 'psav':
+      return 'PSAV'
+    case 'guira_hardcoded':
+      return 'Guira'
+    case 'supplier':
+      return 'Proveedor'
+    default:
+      return ''
+  }
+}
 function OrderReasonActionDialog({ actor, action, blockedReason, label, onUpdated, order }: { actor: StaffActor; action: 'deposit_received' | 'failed'; blockedReason?: string | null; label: string; onUpdated: (order: PaymentOrder) => Promise<void> | void; order: PaymentOrder }) {
   const [open, setOpen] = useState(false)
   const form = useForm<{ reason: string }>({ resolver: zodResolver(staffReasonSchema), defaultValues: { reason: '' } })
@@ -623,3 +745,4 @@ function normalizeNumericValue(value: unknown) {
 
   return 0
 }
+
