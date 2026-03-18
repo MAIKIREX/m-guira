@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { useForm, type Control, type Resolver } from 'react-hook-form'
+import { useForm, useWatch, type Control, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -208,6 +208,9 @@ export function SupportTicketActions({ actor, onUpdated, ticket }: { actor: Staf
 
 export function OrderActions({ actor, onUpdated, order }: { actor: StaffActor; onUpdated: (order: PaymentOrder) => Promise<void> | void; order: PaymentOrder }) {
   const actions = new Set(getOrderActions(order))
+  const blockedDepositReason = !hasClientDepositEvidence(order)
+    ? 'No puedes validar el deposito porque el cliente aun no subio su comprobante.'
+    : null
   if (actions.size === 0) return null
 
   return (
@@ -216,6 +219,7 @@ export function OrderActions({ actor, onUpdated, order }: { actor: StaffActor; o
         <OrderReasonActionDialog
           actor={actor}
           action="deposit_received"
+          blockedReason={blockedDepositReason}
           label="Validar deposito del cliente"
           onUpdated={onUpdated}
           order={order}
@@ -375,10 +379,20 @@ function OrderQuoteDialog({ actor, onUpdated, order }: { actor: StaffActor; onUp
     resolver: zodResolver(staffOrderProcessingSchema) as Resolver<StaffOrderProcessingValues>,
     defaultValues: { exchange_rate_applied: order.exchange_rate_applied, amount_converted: order.amount_converted, fee_total: order.fee_total, reason: '' },
   })
+  const exchangeRateApplied = useWatch({ control: form.control, name: 'exchange_rate_applied' })
+  const feeTotal = useWatch({ control: form.control, name: 'fee_total' })
+  const quotedAmountConverted = calculateQuotedAmountConverted(order.amount_origin, exchangeRateApplied, feeTotal)
 
   async function submit(values: StaffOrderProcessingValues) {
     try {
-      const updatedOrder = await StaffService.preparePaymentOrderQuote({ actor, order, reason: values.reason, exchangeRateApplied: values.exchange_rate_applied, amountConverted: values.amount_converted, feeTotal: values.fee_total })
+      const updatedOrder = await StaffService.preparePaymentOrderQuote({
+        actor,
+        order,
+        reason: values.reason,
+        exchangeRateApplied: values.exchange_rate_applied,
+        amountConverted: quotedAmountConverted,
+        feeTotal: values.fee_total,
+      })
       toast.success('Cotizacion final publicada y orden movida a processing.')
       setOpen(false)
       await onUpdated(updatedOrder)
@@ -399,7 +413,11 @@ function OrderQuoteDialog({ actor, onUpdated, order }: { actor: StaffActor; onUp
         <Form {...form}>
           <form className="space-y-4" onSubmit={form.handleSubmit(submit)}>
             <ProcessingNumberField control={form.control} label="Tipo de cambio" name="exchange_rate_applied" />
-            <ProcessingNumberField control={form.control} label="Monto convertido" name="amount_converted" />
+            <div className="space-y-2">
+              <Label>Monto convertido</Label>
+              <Input className="bg-muted/40 font-medium" readOnly type="number" value={quotedAmountConverted} />
+              <p className="text-xs text-muted-foreground">Se calcula automaticamente segun el monto origen, el tipo de cambio y la fee total. Solo se guarda al publicar la cotizacion.</p>
+            </div>
             <ProcessingNumberField control={form.control} label="Fee total" name="fee_total" />
             <FormField control={form.control} name="reason" render={({ field }) => (
               <FormItem>
@@ -517,12 +535,34 @@ function OrderCompletionDialog({ actor, onUpdated, order }: { actor: StaffActor;
   )
 }
 
-function ProcessingNumberField({ control, label, name }: { control: Control<StaffOrderProcessingValues>; label: string; name: 'exchange_rate_applied' | 'amount_converted' | 'fee_total' }) {
+function ProcessingNumberField({
+  control,
+  description,
+  label,
+  name,
+  readOnly = false,
+}: {
+  control: Control<StaffOrderProcessingValues>
+  description?: string
+  label: string
+  name: 'exchange_rate_applied' | 'amount_converted' | 'fee_total'
+  readOnly?: boolean
+}) {
   return (
     <FormField control={control} name={name} render={({ field }) => (
       <FormItem>
         <FormLabel>{label}</FormLabel>
-        <FormControl><Input {...field} min={0} step="0.01" type="number" /></FormControl>
+        <FormControl>
+          <Input
+            {...field}
+            className={readOnly ? 'bg-muted/40 font-medium' : undefined}
+            min={0}
+            readOnly={readOnly}
+            step="0.01"
+            type="number"
+          />
+        </FormControl>
+        {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
         <FormMessage />
       </FormItem>
     )} />
@@ -532,7 +572,7 @@ function ProcessingNumberField({ control, label, name }: { control: Control<Staf
 function getOrderActions(order: PaymentOrder) {
   switch (order.status) {
     case 'created':
-      return requiresClientEvidence(order) ? ['failed'] as const : ['deposit_received', 'failed'] as const
+      return ['deposit_received', 'failed'] as const
     case 'waiting_deposit':
       return ['deposit_received', 'failed'] as const
     case 'deposit_received':
@@ -546,8 +586,8 @@ function getOrderActions(order: PaymentOrder) {
   }
 }
 
-function requiresClientEvidence(order: PaymentOrder) {
-  return order.order_type === 'WORLD_TO_BO' || order.order_type === 'US_TO_WALLET'
+function hasClientDepositEvidence(order: PaymentOrder) {
+  return typeof order.evidence_url === 'string' && order.evidence_url.trim().length > 0
 }
 
 function getOnboardingActionLabel(status: StaffOnboardingActionValues['status']) {
@@ -559,4 +599,27 @@ function getOnboardingActionLabel(status: StaffOnboardingActionValues['status'])
     case 'rejected':
       return 'Rechazar'
   }
+}
+
+function calculateQuotedAmountConverted(amountOrigin: number, exchangeRateApplied: number, feeTotal: number) {
+  const safeAmountOrigin = normalizeNumericValue(amountOrigin)
+  const safeExchangeRateApplied = normalizeNumericValue(exchangeRateApplied)
+  const safeFeeTotal = normalizeNumericValue(feeTotal)
+  const grossConverted = Math.max((safeAmountOrigin - safeFeeTotal) * safeExchangeRateApplied, 0)
+  return Math.round(grossConverted * 100) / 100
+}
+
+function normalizeNumericValue(value: unknown) {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (!trimmed) return 0
+    const normalized = Number(trimmed.replace(',', '.'))
+    return Number.isFinite(normalized) ? normalized : 0
+  }
+
+  return 0
 }

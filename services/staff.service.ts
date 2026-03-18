@@ -158,12 +158,12 @@ export const StaffService = {
   },
 
   async advancePaymentOrderToDepositReceived(args: { actor: StaffActor; order: PaymentOrder; reason: string }) {
-    if (requiresClientEvidence(args.order) && !args.order.evidence_url) {
+    if (!hasClientDepositEvidence(args.order)) {
       throw new Error('No puedes validar el deposito sin el comprobante del cliente.')
     }
 
-    if (requiresClientEvidence(args.order) && args.order.status !== 'waiting_deposit') {
-      throw new Error('La orden debe pasar primero a waiting_deposit antes de que staff valide el deposito.')
+    if (args.order.status !== 'created' && args.order.status !== 'waiting_deposit') {
+      throw new Error('La validacion del deposito solo se permite cuando la orden esta en created o waiting_deposit.')
     }
 
     return updatePaymentOrderWithAuditAndNotification({ actor: args.actor, order: args.order, nextStatus: 'deposit_received', updates: { status: 'deposit_received' }, reason: args.reason, notificationMessage: 'Staff valido tu deposito y el expediente continua a conciliacion.' })
@@ -173,6 +173,12 @@ export const StaffService = {
     if (args.order.status !== 'deposit_received') {
       throw new Error('La cotizacion final solo se prepara cuando la orden esta en deposit_received.')
     }
+
+    const recalculatedAmountConverted = calculateQuotedAmountConverted(
+      args.order.amount_origin,
+      args.exchangeRateApplied,
+      args.feeTotal
+    )
 
     const supabase = createClient()
     const metadata = {
@@ -189,7 +195,7 @@ export const StaffService = {
     const payload = {
       status: 'processing' as const,
       exchange_rate_applied: args.exchangeRateApplied,
-      amount_converted: args.amountConverted,
+      amount_converted: recalculatedAmountConverted,
       fee_total: args.feeTotal,
       metadata,
       updated_at: new Date().toISOString(),
@@ -278,8 +284,31 @@ export const StaffService = {
   },
 }
 
-function requiresClientEvidence(order: PaymentOrder) {
-  return order.order_type === 'WORLD_TO_BO' || order.order_type === 'US_TO_WALLET'
+function hasClientDepositEvidence(order: PaymentOrder) {
+  return typeof order.evidence_url === 'string' && order.evidence_url.trim().length > 0
+}
+
+function calculateQuotedAmountConverted(amountOrigin: number, exchangeRateApplied: number, feeTotal: number) {
+  const safeAmountOrigin = normalizeNumericValue(amountOrigin)
+  const safeExchangeRateApplied = normalizeNumericValue(exchangeRateApplied)
+  const safeFeeTotal = normalizeNumericValue(feeTotal)
+  const grossConverted = Math.max((safeAmountOrigin - safeFeeTotal) * safeExchangeRateApplied, 0)
+  return Math.round(grossConverted * 100) / 100
+}
+
+function normalizeNumericValue(value: unknown) {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (!trimmed) return 0
+    const normalized = Number(trimmed.replace(',', '.'))
+    return Number.isFinite(normalized) ? normalized : 0
+  }
+
+  return 0
 }
 
 async function updatePaymentOrderWithAuditAndNotification(args: { actor: StaffActor; order: PaymentOrder; nextStatus: PaymentOrder['status']; updates: Partial<PaymentOrder>; reason: string; notificationMessage: string }) {
