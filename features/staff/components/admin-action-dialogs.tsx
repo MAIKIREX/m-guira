@@ -18,7 +18,6 @@ import {
   CircleDollarSign,
   AlertTriangle,
   Bell,
-  CheckCircle2,
   Trash2,
 } from 'lucide-react'
 import {
@@ -42,13 +41,11 @@ import {
   adminAppSettingSchema,
   adminCreateUserSchema,
   adminFeeConfigSchema,
-  adminJsonRecordSchema,
   adminReasonSchema,
   adminPsavRecordSchema,
   type AdminAppSettingValues,
   type AdminCreateUserValues,
   type AdminFeeConfigValues,
-  type AdminJsonRecordValues,
   type AdminReasonValues,
   type AdminPsavRecordValues,
 } from '@/features/staff/schemas/admin-actions.schema'
@@ -338,9 +335,13 @@ function ResetPasswordDialog({ actor, email, onUpdated }: { actor: StaffActor; e
 
 export function FeeConfigDialog({ actor, onUpdated, record }: { actor: StaffActor; onUpdated: (record: FeeConfigRow) => Promise<void> | void; record: FeeConfigRow }) {
   const [open, setOpen] = useState(false)
+  const initialValue =
+    typeof record.value === 'number'
+      ? record.value
+      : Number.parseFloat(String(record.value).replace(',', '.')) || 0
   const form = useForm<AdminFeeConfigValues>({
     resolver: zodResolver(adminFeeConfigSchema) as Resolver<AdminFeeConfigValues>,
-    defaultValues: { value: record.value, currency: record.currency, reason: '' },
+    defaultValues: { value: initialValue, currency: record.currency, reason: '' },
   })
 
   async function submit(values: AdminFeeConfigValues) {
@@ -696,11 +697,15 @@ function PsavUpsertDialog({ actor, label, onUpdated, record }: { actor: StaffAct
               <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400/50 via-cyan-400/50 to-violet-400/50" />
               
               {previewUrl ? (
-                <img 
+                <>
+                  {/* Vista previa con blob/object URL o URL externa dinámica. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img 
                   src={previewUrl} 
                   alt="QR Preview" 
                   className="w-full h-full object-contain transition-transform group-hover:scale-105" 
-                />
+                  />
+                </>
               ) : (
                 <div className="flex flex-col items-center text-center space-y-2 text-muted-foreground/40">
                   <div className="size-12 rounded-full border-2 border-dashed border-muted-foreground/20 flex items-center justify-center">

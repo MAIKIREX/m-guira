@@ -72,7 +72,7 @@ export function buildDepositInstructions(args: {
   route: SupportedPaymentRoute
   psavConfigs: PsavConfigRow[]
   selectedSupplier?: Supplier | null
-}) {
+}): DepositInstruction[] {
   const psavInstructions = getPsavInstructions(args.psavConfigs)
 
   switch (args.route) {
@@ -149,7 +149,7 @@ export function buildDepositInstructions(args: {
   }
 }
 
-function getPsavInstructions(psavConfigs: PsavConfigRow[]) {
+function getPsavInstructions(psavConfigs: PsavConfigRow[]): DepositInstruction[] {
   return psavConfigs.slice(0, 3).map((record, index) => {
     // 1. Preferir campos de primer nivel, luego fallback a metadata o strings genericos
     const provider = record.name || readString(record as Record<string, unknown>, ['provider_name']) || `PSAV ${index + 1}`

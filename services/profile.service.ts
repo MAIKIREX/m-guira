@@ -13,12 +13,13 @@ export const ProfileService = {
         .eq('id', userId)
         .maybeSingle()
 
-      const timeoutPromise = new Promise((_, reject) => 
+      const timeoutPromise = new Promise<never>((_, reject) => 
         setTimeout(() => reject(new Error('Timeout al cargar el perfil')), 8000)
       )
+      type ProfileQueryResult = Awaited<typeof queryPromise>
 
       console.log('ProfileService: executing query with timeout...')
-      const result = await Promise.race([queryPromise, timeoutPromise]) as any
+      const result: ProfileQueryResult = await Promise.race([queryPromise, timeoutPromise])
       const { data, error } = result
 
       console.log('ProfileService: query result received', { data: !!data, error: !!error })

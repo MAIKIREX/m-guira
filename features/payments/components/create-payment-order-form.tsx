@@ -46,6 +46,7 @@ import {
 import {
   buildDepositInstructions,
   estimateRouteValues,
+  type DepositInstruction,
 } from '@/features/payments/lib/deposit-instructions'
 import { DepositInstructionCard } from '@/features/payments/components/deposit-instruction-card'
 import { CRYPTO_NETWORK_OPTIONS, resolveCryptoNetwork } from '@/features/payments/lib/crypto-networks'
@@ -1313,7 +1314,11 @@ function NetworkSelectField({
         <FormItem>
           <FormLabel>{label}</FormLabel>
           <FormControl>
-            <Select disabled={disabled} onValueChange={field.onChange} value={resolveCryptoNetwork(field.value)}>
+            <Select
+              disabled={disabled}
+              onValueChange={field.onChange}
+              value={resolveCryptoNetwork(typeof field.value === 'string' ? field.value : undefined)}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder={placeholder} />
               </SelectTrigger>

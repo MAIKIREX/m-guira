@@ -7,7 +7,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { useProfileStore } from '@/stores/profile-store'
 import { ProfileService } from '@/services/profile.service'
 import type { Profile } from '@/types/profile'
-import type { Session, AuthChangeEvent, User } from '@supabase/supabase-js'
+import type { Session, AuthChangeEvent } from '@supabase/supabase-js'
 
 const PUBLIC_PATHS = ['/login', '/registro', '/recuperar']
 const CLIENT_PATHS = ['/panel', '/depositar', '/enviar', '/proveedores', '/transacciones', '/configuracion', '/pagos', '/actividad', '/soporte', '/onboarding']
@@ -19,9 +19,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [loading, setLoading] = useState(true)
   const bootstrappedRef = useRef(false)
-  const [initDone, setInitDone] = useState(false)
 
-  const { session: storedSession, setSession, setUser } = useAuthStore()
+  const { setSession, setUser } = useAuthStore()
   const { profile: storedProfile, setProfile } = useProfileStore()
   const supabase = useMemo(() => createClient(), [])
   const publicPath = isPublicPath(pathname)
@@ -64,13 +63,13 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
         // Si ya tenemos el perfil en store y coincide con el usuario, evitamos fetch
         if (storedProfileRef.current && storedProfileRef.current.id === session.user.id) {
-          await handleRedirect(session, storedProfileRef.current)
+          await handleRedirect(storedProfileRef.current)
         } else {
           const profile = await getProfileWithRetry(session.user.id)
           if (mounted) {
             if (profile) {
               setProfile(profile)
-              await handleRedirect(session, profile)
+              await handleRedirect(profile)
             } else {
               // Si no hay perfil, forzamos logout
               await supabase.auth.signOut()
@@ -84,12 +83,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         if (mounted) {
           setLoading(false)
           bootstrappedRef.current = true
-          setInitDone(true)
         }
       }
     }
 
-    async function handleRedirect(session: any, profile: Profile) {
+    async function handleRedirect(profile: Profile) {
       const dest = await resolveRedirect({
         pathname,
         profile,
@@ -138,61 +136,6 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   }
 
   return <>{children}</>
-}
-
-async function applyAuthenticatedState({
-  pathname,
-  router,
-  session,
-  setProfile,
-  setSession,
-  setUser,
-  supabase,
-}: {
-  pathname: string
-  router: ReturnType<typeof useRouter>
-  session: Session
-  setProfile: (profile: Profile | null) => void
-  setSession: (session: Session | null) => void
-  setUser: (user: User | null) => void
-  supabase: ReturnType<typeof createClient>
-}) {
-  console.log('AuthGuard: applyAuthenticatedState starting', session.user.id)
-  setSession(session)
-  setUser(session.user)
-
-  console.log('AuthGuard: fetching profile...')
-  const profile = await getProfileWithRetry(session.user.id)
-  console.log('AuthGuard: profile result', profile?.id)
-
-  if (!profile) {
-    console.log('AuthGuard: no profile found, signing out')
-    await supabase.auth.signOut()
-    setSession(null)
-    setUser(null)
-    setProfile(null)
-    router.push('/login')
-    return
-  }
-
-  setProfile(profile)
-
-  const destination = await resolveRedirect({
-    pathname,
-    profile,
-    onArchived: async () => {
-      console.log('AuthGuard: profile archived in resolveRedirect')
-      await supabase.auth.signOut()
-      setSession(null)
-      setUser(null)
-      setProfile(null)
-    },
-  })
-  
-  if (destination && destination !== pathname) {
-    console.log('AuthGuard: redirecting to', destination)
-    router.push(destination)
-  }
 }
 
 async function getProfileWithRetry(userId: string) {

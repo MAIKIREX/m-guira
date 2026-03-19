@@ -161,7 +161,7 @@ export function StaffReadonlyPanel() {
         </TabsList>
 
         <TabsContent value="overview">
-          <OverviewPanel auditCount={snapshot.auditLogs.length} isAdmin={isAdmin} isPrivileged={isPrivileged} />
+          <OverviewPanel auditCount={snapshot.auditLogs.length} isPrivileged={isPrivileged} />
         </TabsContent>
         <TabsContent value="onboarding">
           <OnboardingTable records={snapshot.onboarding} />
@@ -229,7 +229,7 @@ function RoleCard({ title, body }: { title: string; body: string }) {
   )
 }
 
-function OverviewPanel({ auditCount, isAdmin, isPrivileged }: { auditCount: number; isAdmin: boolean; isPrivileged: boolean }) {
+function OverviewPanel({ auditCount, isPrivileged }: { auditCount: number; isPrivileged: boolean }) {
   return (
     <div className="grid gap-4 xl:grid-cols-3">
       <RoleCard title="1. Onboarding" body="Aqui se verifica, rechaza o pide cambios al KYC/KYB antes de operar." />
@@ -771,6 +771,7 @@ function PsavPanel({ actor, isPrivileged, onChangeRecord, records }: { actor: St
                   <TableCell className="py-4 pl-6">
                     {record.qr_url ? (
                       <div className="relative size-10 overflow-hidden rounded-lg border border-border/80 bg-card p-1 transition-transform group-hover:scale-110 shadow-sm">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img 
                           src={record.qr_url} 
                           alt="QR" 
