@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { ClientNavigation } from '@/components/layout/client-navigation'
+import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { Button } from '@/components/ui/button'
 import { UserMenu } from '@/features/auth/components/user-menu'
 import { NotificationBell } from '@/features/notifications/components/notification-bell'
@@ -77,6 +78,7 @@ export function ClientShell({
               </div>
 
               <div className="flex items-center gap-4">
+                <ThemeToggle />
                 <NotificationBell />
                 <UserMenu />
               </div>

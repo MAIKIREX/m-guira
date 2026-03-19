@@ -153,15 +153,15 @@ function OnboardingDetailScene({
   // Palette/depth: superficies oscuras, cian de enfoque y violeta de acento para una lectura operativa tipo terminal financiera.
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[28px] border border-cyan-400/15 bg-[linear-gradient(135deg,rgba(11,16,32,0.96),rgba(18,26,43,0.98))] shadow-[0_24px_80px_-48px_rgba(0,0,0,0.7)]">
+      <section className="overflow-hidden rounded-[28px] border border-blue-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(241,245,249,0.98))] shadow-[0_24px_80px_-48px_rgba(15,23,42,0.12)] dark:border-cyan-400/15 dark:bg-[linear-gradient(135deg,rgba(11,16,32,0.96),rgba(18,26,43,0.98))] dark:shadow-[0_24px_80px_-48px_rgba(0,0,0,0.7)]">
         <div className="grid gap-6 border-b border-border/70 px-5 py-5 md:px-7 xl:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-4">
-            <Link className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground transition-colors hover:text-cyan-300" href="/admin">
+            <Link className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground transition-colors hover:text-blue-700 dark:hover:text-cyan-300" href="/admin">
               <ArrowLeft className="size-4" />
               Volver a onboarding
             </Link>
             <div className="space-y-3">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-300">Mesa de verificacion</div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.28em] text-blue-800 dark:text-cyan-300">Mesa de verificacion</div>
               <div className="flex flex-wrap items-start gap-3">
                 <div>
                   <h1 className="text-3xl font-semibold tracking-[-0.03em] text-foreground">{summary.displayName}</h1>
@@ -195,7 +195,7 @@ function OnboardingDetailScene({
                   Las decisiones siguen disponibles dentro del expediente para que la revision no pierda contexto.
                 </div>
               </div>
-              <ShieldCheck className="size-5 text-cyan-300" />
+              <ShieldCheck className="size-5 text-teal-600 dark:text-cyan-300" />
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
               <OnboardingActions actor={actor} onUpdated={onUpdated} record={record} />
@@ -287,7 +287,7 @@ function OnboardingDetailScene({
               </CardContent>
             </Card>
 
-            <Card className="border-violet-400/20 bg-[linear-gradient(180deg,rgba(18,26,43,0.96),rgba(27,37,64,0.98))]">
+            <Card className="border-teal-200/70 bg-[linear-gradient(180deg,rgba(248,250,252,0.96),rgba(236,253,250,0.98))] dark:border-violet-400/20 dark:bg-[linear-gradient(180deg,rgba(18,26,43,0.96),rgba(27,37,64,0.98))]">
               <CardHeader>
                 <CardTitle>Contexto de revision</CardTitle>
                 <CardDescription>La UI deja visibles las acciones administrativas, pero el backend actual sigue operando a nivel de onboarding.</CardDescription>
@@ -317,16 +317,16 @@ function OnboardingDetailScene({
               </CardContent>
             </Card>
 
-            <Card className="border-violet-400/20 bg-[linear-gradient(180deg,rgba(16,22,39,0.98),rgba(26,18,52,0.98))] text-slate-50">
+            <Card className="border-blue-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(241,245,249,0.98))] text-slate-900 dark:border-violet-400/20 dark:bg-[linear-gradient(180deg,rgba(16,22,39,0.98),rgba(26,18,52,0.98))] dark:text-slate-50">
               <CardHeader>
                 <CardTitle>Lectura operativa</CardTitle>
-                <CardDescription className="text-slate-300">{getVerificationCopy(record.status)}</CardDescription>
+                <CardDescription className="text-slate-600 dark:text-slate-300">{getVerificationCopy(record.status)}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <ReviewNoteDark icon={ShieldCheck} title="Historial disponible" body="Los cambios de estado quedan en auditoria; esta vista se concentra en el expediente y la accion inmediata." />
                 <ReviewNoteDark icon={ScanSearch} title="Revision guiada" body="Primero identidad, luego evidencia documental y al final decision de verificacion." />
                 <ReviewNoteDark icon={CircleAlert} title="Comentarios visibles" body="Las observaciones del onboarding se mantienen expuestas para que staff no pierda el hilo del caso." />
-                <div className="flex flex-wrap gap-2 border-t border-white/10 pt-4">
+                <div className="flex flex-wrap gap-2 border-t border-border/70 pt-4">
                   <OnboardingActions actor={actor} onUpdated={onUpdated} record={record} />
                 </div>
               </CardContent>

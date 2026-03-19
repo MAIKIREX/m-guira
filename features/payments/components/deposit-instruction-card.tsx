@@ -114,7 +114,7 @@ export function DepositInstructionCard({ instruction }: { instruction: DepositIn
                             Escanea este codigo para completar el deposito del expediente.
                           </DialogDescription>
                         </DialogHeader>
-                        <div className="mx-auto w-full max-w-[360px] overflow-hidden rounded-[28px] border border-border/70 bg-slate-950 p-4 shadow-sm">
+                        <div className="mx-auto w-full max-w-[360px] overflow-hidden rounded-[28px] border border-border/70 bg-white p-4 shadow-sm dark:bg-slate-950">
                           <Image
                             src={instruction.qrUrl}
                             alt={`QR ampliado ${instruction.title}`}
