@@ -4,15 +4,12 @@ import { useCallback } from 'react'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAuthStore } from '@/stores/auth-store'
 import { useProfileStore } from '@/stores/profile-store'
 import { usePaymentsModule } from '@/features/payments/hooks/use-payments-module'
 import { CreatePaymentOrderForm } from '@/features/payments/components/create-payment-order-form'
 import { PaymentsHistoryTable } from '@/features/payments/components/payments-history-table'
 import { SuppliersSection } from '@/features/payments/components/suppliers-section'
-import { useWalletDashboard } from '@/features/wallet/hooks/use-wallet-dashboard'
-import { ActiveTransfersTable } from '@/features/wallet/components/active-transfers-table'
 import type { SupportedPaymentRoute } from '@/features/payments/lib/payment-routes'
 
 const MODE_CONFIG: Record<WorkspaceMode, {
@@ -55,32 +52,20 @@ export function ClientOperationsWorkspace({ mode }: { mode: WorkspaceMode }) {
   const { user } = useAuthStore()
   const { profile } = useProfileStore()
   const payments = usePaymentsModule(user?.id)
-  const wallet = useWalletDashboard(user?.id)
-  const refreshWalletSnapshot = useCallback(() => {
-    if (mode === 'transacciones') {
-      void wallet.reload()
-    }
-  }, [mode, wallet])
 
   const handleCreateOrder = useCallback(async (...args: Parameters<typeof payments.createOrder>) => {
-    const result = await payments.createOrder(...args)
-    refreshWalletSnapshot()
-    return result
-  }, [payments, refreshWalletSnapshot])
+    return payments.createOrder(...args)
+  }, [payments])
 
   const handleUploadOrderFile = useCallback(async (...args: Parameters<typeof payments.uploadOrderFile>) => {
-    const result = await payments.uploadOrderFile(...args)
-    refreshWalletSnapshot()
-    return result
-  }, [payments, refreshWalletSnapshot])
+    return payments.uploadOrderFile(...args)
+  }, [payments])
 
   const handleCancelOrder = useCallback(async (...args: Parameters<typeof payments.cancelOrder>) => {
-    const result = await payments.cancelOrder(...args)
-    refreshWalletSnapshot()
-    return result
-  }, [payments, refreshWalletSnapshot])
+    return payments.cancelOrder(...args)
+  }, [payments])
 
-  if (payments.loading || (mode === 'transacciones' && wallet.loading)) {
+  if (payments.loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <Loader2 className="size-5 animate-spin text-muted-foreground" />
@@ -88,15 +73,15 @@ export function ClientOperationsWorkspace({ mode }: { mode: WorkspaceMode }) {
     )
   }
 
-  if (!user || payments.error || !payments.snapshot || (mode === 'transacciones' && (wallet.error || !wallet.snapshot))) {
+  if (!user || payments.error || !payments.snapshot) {
     return (
       <Card className="border-destructive/30">
         <CardHeader>
           <CardTitle>No se pudo cargar esta seccion</CardTitle>
-          <CardDescription>{payments.error ?? wallet.error ?? 'No hay una sesion valida o faltan datos para continuar.'}</CardDescription>
+          <CardDescription>{payments.error ?? 'No hay una sesion valida o faltan datos para continuar.'}</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button onClick={() => { payments.reload(); wallet.reload() }} type="button">Reintentar</Button>
+          <Button onClick={() => { payments.reload() }} type="button">Reintentar</Button>
         </CardContent>
       </Card>
     )
@@ -181,38 +166,20 @@ export function ClientOperationsWorkspace({ mode }: { mode: WorkspaceMode }) {
 
       {mode === 'transacciones' ? (
         <div className="space-y-6">
-          {/*<WalletSummaryCards snapshot={wallet.snapshot!} />*/}
-
           <Card>
             <CardHeader>
-              <CardTitle className='text-2xl font-semibold'>Transacciones</CardTitle>
-              {/*<CardDescription>Separacion clara entre historial operativo y expedientes que aun requieren accion.</CardDescription>*/}
+              <CardTitle className='text-2xl font-semibold'>Expedientes</CardTitle>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="movements" className="gap-4">
-                <TabsList>
-                  <TabsTrigger value="movements">Transferencias y movimientos</TabsTrigger>
-                  <TabsTrigger value="orders">Expedientes</TabsTrigger>
-                </TabsList>
-                <TabsContent value="movements" className="space-y-4">
-                  <ActiveTransfersTable
-                    bridgeTransfers={wallet.snapshot!.pendingBridgeTransfers}
-                    paymentOrders={wallet.snapshot!.activePaymentOrders}
-                  />
-                  {/*<MovementHistoryTable movements={wallet.snapshot!.movements} />*/}
-                </TabsContent>
-                <TabsContent value="orders">
-                  <PaymentsHistoryTable
-                    activityLogs={payments.snapshot.activityLogs}
-                    disabled={!canOperate}
-                    onCancelOrder={handleCancelOrder}
-                    onUploadOrderFile={handleUploadOrderFile}
-                    orders={payments.snapshot.paymentOrders}
-                    psavConfigs={payments.snapshot.psavConfigs}
-                    suppliers={payments.snapshot.suppliers}
-                  />
-                </TabsContent>
-              </Tabs>
+              <PaymentsHistoryTable
+                activityLogs={payments.snapshot.activityLogs}
+                disabled={!canOperate}
+                onCancelOrder={handleCancelOrder}
+                onUploadOrderFile={handleUploadOrderFile}
+                orders={payments.snapshot.paymentOrders}
+                psavConfigs={payments.snapshot.psavConfigs}
+                suppliers={payments.snapshot.suppliers}
+              />
             </CardContent>
           </Card>
         </div>
