@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { loginSchema, type LoginFormValues } from '../schemas/login.schema'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { AuthService } from '@/services/auth.service'
 import { toast } from 'sonner'
@@ -72,7 +73,7 @@ export function LoginForm() {
               <FormItem>
                 <FormLabel>Contraseña</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="••••••••" {...field} />
+                  <PasswordInput placeholder="••••••••" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

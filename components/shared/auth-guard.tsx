@@ -29,6 +29,51 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const storedProfileRef = useRef(storedProfile)
   useEffect(() => { storedProfileRef.current = storedProfile }, [storedProfile])
 
+  async function handleRedirect(profile: Profile, nextPathname: string) {
+    const dest = await resolveRedirect({
+      pathname: nextPathname,
+      profile,
+      onArchived: async () => {
+        await supabase.auth.signOut()
+        setSession(null)
+        setUser(null)
+        setProfile(null)
+      }
+    })
+
+    if (dest && dest !== nextPathname) {
+      router.replace(dest)
+    }
+  }
+
+  async function syncProfileAndRedirect(session: Session, nextPathname: string) {
+    setSession(session)
+    setUser(session.user)
+
+    const cachedProfile =
+      storedProfileRef.current && storedProfileRef.current.id === session.user.id
+        ? storedProfileRef.current
+        : null
+
+    if (cachedProfile) {
+      await handleRedirect(cachedProfile, nextPathname)
+      return
+    }
+
+    const profile = await getProfileWithRetry(session.user.id)
+    if (profile) {
+      setProfile(profile)
+      await handleRedirect(profile, nextPathname)
+      return
+    }
+
+    await supabase.auth.signOut()
+    setSession(null)
+    setUser(null)
+    setProfile(null)
+    router.replace('/login')
+  }
+
   // 1. Efecto para inicializar Auth (solo al montar o si cambia el pathname radicalmente)
   useEffect(() => {
     let mounted = true
@@ -51,32 +96,14 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
           setUser(null)
           setProfile(null)
           if (!publicPath) {
-            router.push('/login')
+            router.replace('/login')
           }
           setLoading(false)
           bootstrappedRef.current = true
           return
         }
 
-        setSession(session)
-        setUser(session.user)
-
-        // Si ya tenemos el perfil en store y coincide con el usuario, evitamos fetch
-        if (storedProfileRef.current && storedProfileRef.current.id === session.user.id) {
-          await handleRedirect(storedProfileRef.current)
-        } else {
-          const profile = await getProfileWithRetry(session.user.id)
-          if (mounted) {
-            if (profile) {
-              setProfile(profile)
-              await handleRedirect(profile)
-            } else {
-              // Si no hay perfil, forzamos logout
-              await supabase.auth.signOut()
-              router.push('/login')
-            }
-          }
-        }
+        await syncProfileAndRedirect(session, pathname)
       } catch (error) {
         console.error('AuthGuard: init error', error)
       } finally {
@@ -84,22 +111,6 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
           setLoading(false)
           bootstrappedRef.current = true
         }
-      }
-    }
-
-    async function handleRedirect(profile: Profile) {
-      const dest = await resolveRedirect({
-        pathname,
-        profile,
-        onArchived: async () => {
-          await supabase.auth.signOut()
-          setSession(null)
-          setUser(null)
-          setProfile(null)
-        }
-      })
-      if (dest && dest !== pathname) {
-        router.push(dest)
       }
     }
 
@@ -116,15 +127,13 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         setSession(null)
         setUser(null)
         setProfile(null)
-        router.push('/login')
+        router.replace('/login')
       } else if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-        setSession(session)
-        setUser(session.user)
-        // El efecto de path se encargará de cargar el perfil si es necesario
+        await syncProfileAndRedirect(session, pathname)
       }
     })
     return () => subscription.unsubscribe()
-  }, [supabase, router, setProfile, setSession, setUser])
+  }, [pathname, supabase, router, setProfile, setSession, setUser])
 
   if (loading && !publicPath) {
     return (

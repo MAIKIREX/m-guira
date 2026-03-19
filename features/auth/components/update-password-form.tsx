@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { updatePasswordSchema, type UpdatePasswordFormValues } from '../schemas/update-password.schema'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { AuthService } from '@/services/auth.service'
 import { toast } from 'sonner'
@@ -48,7 +48,7 @@ export function UpdatePasswordForm() {
               <FormItem>
                 <FormLabel>Contraseña</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="••••••••" {...field} />
+                  <PasswordInput placeholder="••••••••" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

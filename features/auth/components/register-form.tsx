@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { registerSchema, type RegisterFormValues } from '../schemas/register.schema'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { AuthService } from '@/services/auth.service'
@@ -74,7 +75,7 @@ export function RegisterForm() {
               <FormItem>
                 <FormLabel>Contraseña</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="••••••••" {...field} />
+                  <PasswordInput placeholder="••••••••" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

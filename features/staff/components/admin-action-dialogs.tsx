@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
@@ -108,7 +109,7 @@ export function CreateUserDialog({ actor, onUpdated }: { actor: StaffActor; onUp
             <FormField control={form.control} name="password" render={({ field }) => (
               <FormItem>
                 <FormLabel>Password</FormLabel>
-                <FormControl><Input {...field} type="password" /></FormControl>
+                <FormControl><PasswordInput {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />
