@@ -209,7 +209,7 @@ export function PaymentsHistoryTable({
       ) : null}
 
       {filteredOrders.map((order) => {
-        const supplier = order.supplier_id ? suppliersById.get(order.supplier_id) : null
+        const supplier = order.supplier_id ? (suppliersById.get(order.supplier_id) ?? null) : null
         const canCancel = OPEN_ORDER_STATUSES.has(order.status)
         const openUploads = OPEN_ORDER_STATUSES.has(order.status)
         const orderActivity = activityByOrderId.get(order.id) ?? []
