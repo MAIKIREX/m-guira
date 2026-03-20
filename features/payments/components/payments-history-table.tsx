@@ -149,8 +149,8 @@ export function PaymentsHistoryTable({
   }
 
   return (
-    <div className="space-y-4">
-      <section className="overflow-hidden rounded-[28px] border border-border/70 bg-[linear-gradient(180deg,rgba(10,18,32,0.04),rgba(10,18,32,0))]">
+    <div className="space-y-4 ">
+      <section className="overflow-hidden rounded-[28px] border border-border/70 ">
         <div className="grid gap-5 border-b border-border/60 px-5 py-5 xl:grid-cols-[1.15fr_0.85fr] xl:items-end">
           <div className="space-y-3">
             <div className="text-[11px] font-semibold uppercase tracking-[0.28em] text-muted-foreground">Bitacora operativa</div>
@@ -227,8 +227,8 @@ export function PaymentsHistoryTable({
         const statusMeta = getStatusMeta(order.status)
 
         return (
-          <Card key={order.id} className="overflow-hidden rounded-[30px] border-border/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0))]">
-            <CardHeader className="gap-4 border-b border-border/60 bg-background/95">
+          <Card key={order.id} className="overflow-hidden rounded-[30px] border-border/70 bg-background">
+            <CardHeader className="gap-4 border-b border-border/60 ">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-2">
@@ -296,7 +296,7 @@ export function PaymentsHistoryTable({
             </CardHeader>
 
             {isExpanded ? (
-              <CardContent className="grid gap-0 p-0 xl:grid-cols-[1.18fr_0.82fr]">
+              <CardContent className="grid gap-0 p-0 xl:grid-cols-[1.18fr_0.82fr] ">
                 <div className="space-y-8 px-6 py-6">
                   <div className="grid gap-4 border-b border-border/60 pb-6 md:grid-cols-3">
                     <SnapshotMetric label="Inicio del flujo" value={format(new Date(order.created_at), 'dd/MM/yyyy HH:mm')} />
