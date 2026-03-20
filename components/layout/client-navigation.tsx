@@ -24,11 +24,6 @@ export function ClientNavigation({
 
   return (
     <nav className="space-y-2.5">
-      {!collapsed ? (
-        <div className="px-4 text-[10px] font-semibold uppercase tracking-[0.34em] text-muted-foreground/80">
-          Cliente
-        </div>
-      ) : null}
       {clientLinks.map((link) => {
         const active = pathname === link.href || pathname.startsWith(`${link.href}/`)
         const Icon = link.icon
@@ -62,7 +57,7 @@ export function ClientNavigation({
               <Icon className={cn('size-4', !collapsed && 'size-[1.05rem]')} />
             </span>
             {!collapsed ? (
-              <span className="relative z-10 text-[0.82rem] font-semibold uppercase tracking-[0.16em]">
+              <span className="relative z-10 text-[0.82rem] font-medium">
                 {link.label}
               </span>
             ) : null}

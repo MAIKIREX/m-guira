@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
 import { format } from 'date-fns'
-import { ChevronDown, Download, FileText, FileUp, Search, ShieldAlert, XCircle } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { ChevronDown, Download, Search, ShieldAlert, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { FileDropzone } from '@/components/shared/file-dropzone'
+import { DocumentUploadCard } from '@/components/shared/document-upload-card'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -150,7 +151,7 @@ export function PaymentsHistoryTable({
 
   return (
     <div className="space-y-4 ">
-      <section className="overflow-hidden rounded-[28px] border border-border/70 ">
+      <section className="overflow-hidden rounded-[28px]  ">
         <div className="grid gap-5 border-b border-border/60 px-5 py-5 xl:grid-cols-[1.15fr_0.85fr] xl:items-end">
           <div className="space-y-3">
             <div className="text-[11px] font-semibold uppercase tracking-[0.28em] text-muted-foreground">Bitacora operativa</div>
@@ -218,17 +219,19 @@ export function PaymentsHistoryTable({
         const route = resolveOrderRoute(order)
         const depositInstructions = route
           ? buildDepositInstructions({
-              route,
-              psavConfigs,
-              selectedSupplier: supplier ?? null,
-            })
+            route,
+            psavConfigs,
+            selectedSupplier: supplier ?? null,
+          })
           : []
+        const primaryDepositInstructions = depositInstructions.filter((instruction) => instruction.kind !== 'note')
+        const noteDepositInstructions = depositInstructions.filter((instruction) => instruction.kind === 'note')
         const showFundingInstructions = depositInstructions.length > 0 && OPEN_ORDER_STATUSES.has(order.status)
         const statusMeta = getStatusMeta(order.status)
 
         return (
-          <Card key={order.id} className="overflow-hidden rounded-[30px] border-border/70 bg-background">
-            <CardHeader className="gap-4 border-b border-border/60 ">
+          <Card key={order.id} className="overflow-hidden rounded-[30px] border-border/70 border-1 bg-background hover:border-border">
+            <CardHeader className="gap-4 ">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-2">
@@ -296,13 +299,13 @@ export function PaymentsHistoryTable({
             </CardHeader>
 
             {isExpanded ? (
-              <CardContent className="grid gap-0 p-0 xl:grid-cols-[1.18fr_0.82fr] ">
+              <CardContent className="grid border-t border-border/60 gap-0 p-0 xl:grid-cols-[1.18fr_0.82fr] ">
                 <div className="space-y-8 px-6 py-6">
-                  <div className="grid gap-4 border-b border-border/60 pb-6 md:grid-cols-3">
+                  {/*<div className="grid gap-4 border-b border-border/60 pb-6 md:grid-cols-3">
                     <SnapshotMetric label="Inicio del flujo" value={format(new Date(order.created_at), 'dd/MM/yyyy HH:mm')} />
                     <SnapshotMetric label="Tiempo operativo" value={getElapsedLabel(order.created_at, order.status)} accent={order.status !== 'completed' && order.status !== 'failed'} />
                     <SnapshotMetric label="Contexto" value={getContextMetric(order, supplier)} />
-                  </div>
+                  </div>*/}
 
                   <section className="space-y-4">
                     <SectionHeading
@@ -321,10 +324,17 @@ export function PaymentsHistoryTable({
                         title="Cuenta para depositar"
                       />
                       <div className="grid gap-4 xl:grid-cols-2">
-                        {depositInstructions.map((instruction) => (
+                        {primaryDepositInstructions.map((instruction) => (
                           <DepositInstructionCard key={`${order.id}-${instruction.id}`} instruction={instruction} />
                         ))}
                       </div>
+                      {noteDepositInstructions.length > 0 ? (
+                        <div className="grid gap-4">
+                          {noteDepositInstructions.map((instruction) => (
+                            <DepositInstructionCard key={`${order.id}-${instruction.id}`} instruction={instruction} />
+                          ))}
+                        </div>
+                      ) : null}
                     </section>
                   ) : null}
 
@@ -370,61 +380,84 @@ export function PaymentsHistoryTable({
 }
 
 function StatusRail({ order }: { order: PaymentOrder }) {
+  const currentIndex = FLOW_STAGES.findIndex((stage) => stage.key === order.status)
+
   return (
-    <div className="grid gap-4">
-      <div className="hidden items-center xl:flex">
+    <div className="overflow-x-auto py-2">
+      <div className="flex min-w-max items-start justify-center gap-3 md:gap-4">
         {FLOW_STAGES.map((stage, index) => {
-          const reached = hasReachedStage(order.status, stage.key)
-          const current = order.status === stage.key
+          const isCurrent = stage.key === order.status
+          const isReached = currentIndex >= index
+          const isComplete = currentIndex > index
+          const lineFilled = currentIndex > index ? '100%' : '0%'
+
           return (
-            <div key={stage.key} className="flex min-w-0 flex-1 items-center">
-              <div
-                className={cn(
-                  'flex size-11 shrink-0 items-center justify-center rounded-full border text-xs font-semibold',
-                  current
-                    ? 'border-cyan-500/50 bg-cyan-400/15 text-cyan-700 dark:text-cyan-300'
-                    : reached
-                      ? 'border-emerald-500/40 bg-emerald-400/12 text-emerald-700 dark:text-emerald-300'
-                      : 'border-border/60 bg-background/70 text-muted-foreground'
-                )}
+            <div
+              key={stage.key}
+              className={cn(
+                'relative flex min-w-[120px] flex-col items-center text-center sm:min-w-[132px] md:min-w-[144px]',
+                index < FLOW_STAGES.length - 1 && 'md:pr-4 lg:pr-6'
+              )}
+            >
+              <motion.div
+                animate={{
+                  backgroundColor: isCurrent
+                    ? 'rgba(34,211,238,0.18)'
+                    : isComplete
+                      ? 'rgba(16,185,129,0.18)'
+                      : 'rgba(255,255,255,0.04)',
+                  borderColor: isCurrent
+                    ? 'rgba(34,211,238,0.55)'
+                    : isComplete
+                      ? 'rgba(16,185,129,0.45)'
+                      : 'rgba(148,163,184,0.22)',
+                  scale: isCurrent ? 1.06 : 1,
+                  boxShadow: isCurrent ? '0 0 0 6px rgba(34,211,238,0.08)' : '0 0 0 0 rgba(0,0,0,0)',
+                }}
+                className="relative z-10 flex size-12 items-center justify-center rounded-full border text-sm font-semibold text-foreground"
+                initial={false}
+                transition={{ duration: 0.28, ease: 'easeOut' }}
               >
-                {index + 1}
+                <motion.span
+                  animate={{ opacity: isReached ? 1 : 0.7, y: isCurrent ? -0.5 : 0 }}
+                  initial={false}
+                  transition={{ duration: 0.2 }}
+                >
+                  {index + 1}
+                </motion.span>
+              </motion.div>
+
+              <motion.div
+                animate={{ opacity: isCurrent ? 1 : isReached ? 0.92 : 0.7, y: isCurrent ? 0 : 1 }}
+                className="mt-3 w-full px-1 text-center text-xs font-medium leading-4 text-foreground sm:text-sm"
+                initial={false}
+                transition={{ duration: 0.22 }}
+              >
+                {stage.label}
+              </motion.div>
+
+              <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                {isCurrent ? 'Etapa actual' : isReached ? 'Completada' : 'Pendiente'}
               </div>
+
               {index < FLOW_STAGES.length - 1 ? (
-                <div className={cn('h-px flex-1', reached ? 'bg-emerald-400/35' : 'bg-border/60')} />
+                <div className="absolute left-[calc(50%+2rem)] top-6 hidden w-[calc(100%-4rem)] -translate-y-1/2 md:block">
+                  <div className="relative h-px w-full rounded-full bg-border/70">
+                    <motion.div
+                      animate={{ width: lineFilled }}
+                      className={cn(
+                        'absolute inset-y-0 left-0 rounded-full',
+                        isComplete ? 'bg-emerald-400' : 'bg-cyan-400'
+                      )}
+                      initial={false}
+                      transition={{ duration: 0.35, ease: 'easeInOut' }}
+                    />
+                  </div>
+                </div>
               ) : null}
             </div>
           )
         })}
-      </div>
-
-      <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
-        {FLOW_STAGES.map((stage, index) => {
-          const reached = hasReachedStage(order.status, stage.key)
-          const current = order.status === stage.key
-          return (
-          <div
-            key={stage.key}
-            className={cn(
-              'rounded-2xl border px-4 py-4 text-sm transition-colors',
-              current
-                ? 'border-cyan-400/40 bg-cyan-400/10'
-                : reached
-                  ? 'border-emerald-400/30 bg-emerald-400/8'
-                  : 'border-border/60 bg-background/70'
-            )}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{String(index + 1).padStart(2, '0')}</div>
-              <div className="h-px flex-1 bg-border/60" />
-            </div>
-            <div className="mt-3 font-medium text-foreground">{stage.label}</div>
-            <div className="mt-1 text-xs text-muted-foreground">
-              {current ? 'Etapa actual' : reached ? 'Etapa completada' : 'Pendiente'}
-            </div>
-          </div>
-        )
-      })}
       </div>
     </div>
   )
@@ -505,7 +538,7 @@ function AttachmentPanel({
       </div>
 
       {openUploads ? (
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-3 lg:grid-cols-2">
           {showSupportUploader ? (
             <AttachmentUploader
               accept={ACCEPTED_UPLOADS}
@@ -599,12 +632,14 @@ function ActionDesk({
     <section className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div className="space-y-1">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Mesa de accion</div>
+          <div className='flex items-center gap-2 justify-between'>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Mesa de accion</div>
+            <Badge className={getUrgencyBadgeClass(order.status)} variant="outline">
+              {getUrgencyLabel(order.status)}
+            </Badge>
+          </div>
           <div className="text-sm text-foreground">{getNextActionMessage(order)}</div>
         </div>
-        <Badge className={getUrgencyBadgeClass(order.status)} variant="outline">
-          {getUrgencyLabel(order.status)}
-        </Badge>
       </div>
 
       <div className="rounded-[26px] border border-border/70 bg-background/88 p-4">
@@ -695,45 +730,23 @@ function AttachmentUploader({
   onUpload: () => void
   selectedFile?: File
 }) {
-  const previewUrl = useMemo(() => (selectedFile ? URL.createObjectURL(selectedFile) : null), [selectedFile])
-
-  useEffect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl)
-    }
-  }, [previewUrl])
-
   return (
-    <div className="rounded-[24px] border border-border/60 bg-background/75 p-4 text-left">
-      <div className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
-      <FileDropzone
-        accept={accept}
-        disabled={disabled || busy}
-        file={selectedFile ?? null}
-        helperText={`Arrastra ${label.toLowerCase()} o haz click para seleccionarlo.`}
-        onFileSelect={(file) => onFileChange(file ?? undefined)}
-      />
-      <Button className="mt-3" disabled={disabled || busy} onClick={onUpload} size="sm" type="button" variant="outline">
-        <FileUp />
-        {busy ? 'Subiendo...' : `Subir ${label.toLowerCase()}`}
-      </Button>
-      <div className="mt-3 space-y-2 text-xs text-muted-foreground">
-        {existingUrl ? (
-          <a className="flex items-center gap-2 text-primary underline-offset-4 hover:underline" href={existingUrl} rel="noreferrer" target="_blank">
-            <FileText className="size-3.5" />
-            Ver archivo ya entregado
-          </a>
-        ) : (
-          <div>Aun no hay archivo entregado.</div>
-        )}
-        {selectedFile ? (
-          <a className="flex items-center gap-2 text-primary underline-offset-4 hover:underline" href={previewUrl ?? '#'} rel="noreferrer" target="_blank">
-            <FileText className="size-3.5" />
-            Ver archivo que estas por subir: {selectedFile.name}
-          </a>
-        ) : null}
-      </div>
-    </div>
+    <DocumentUploadCard
+      accept={accept}
+      description={undefined}
+      disabled={disabled}
+      emptyStateText="Aun no hay archivo entregado."
+      existingUrl={existingUrl}
+      existingUrlLabel="Ver archivo ya entregado"
+      file={selectedFile ?? null}
+      helperText={`Arrastra ${label.toLowerCase()} o haz click para seleccionarlo.`}
+      label={label}
+      onFileChange={(file) => onFileChange(file ?? undefined)}
+      onUpload={onUpload}
+      selectedFileLinkLabel={(fileName) => `Ver archivo que estas por subir: ${fileName}`}
+      uploading={busy}
+      uploadLabel={`Subir ${label.toLowerCase()}`}
+    />
   )
 }
 
@@ -743,15 +756,6 @@ function InfoBlock({ label, value, highlight, subtitle }: { label: string; value
       <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
       <div className="mt-2 text-base font-medium text-foreground">{value}</div>
       {subtitle ? <div className="mt-1 text-xs text-muted-foreground">Antes: {subtitle}</div> : null}
-    </div>
-  )
-}
-
-function SnapshotMetric({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
-  return (
-    <div className="space-y-2">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">{label}</div>
-      <div className={cn('text-base font-semibold tracking-[-0.02em] text-foreground', accent && 'text-cyan-700 dark:text-cyan-300')}>{value}</div>
     </div>
   )
 }
@@ -810,12 +814,6 @@ function getStatusMeta(status: PaymentOrder['status']) {
   }
 }
 
-function hasReachedStage(currentStatus: PaymentOrder['status'], stage: PaymentOrder['status']) {
-  const currentIndex = FLOW_STAGES.findIndex((entry) => entry.key === currentStatus)
-  const targetIndex = FLOW_STAGES.findIndex((entry) => entry.key === stage)
-  return currentIndex >= 0 && targetIndex >= 0 && currentIndex >= targetIndex
-}
-
 function getMetadataDate(metadata: PaymentOrder['metadata'], key: 'quote_prepared_at') {
   if (!metadata || typeof metadata !== 'object' || !(key in metadata)) return null
   const value = metadata[key]
@@ -845,27 +843,6 @@ function getNextActionMessage(order: PaymentOrder) {
     case 'failed':
       return 'La orden fue cerrada como fallida. Revisa la razon registrada en metadata o auditoria.'
   }
-}
-
-function getContextMetric(order: PaymentOrder, supplier: Supplier | null) {
-  if (supplier?.name) return supplier.name
-  if (order.processing_rail === 'SWIFT') return 'Rail SWIFT'
-  if (order.processing_rail === 'ACH') return 'Rail ACH'
-  if (order.processing_rail === 'PSAV') return 'Rail PSAV'
-  return 'Rail digital'
-}
-
-function getElapsedLabel(createdAt: string, status: PaymentOrder['status']) {
-  if (status === 'completed' || status === 'failed') return 'Cerrado'
-
-  const diffMs = Date.now() - new Date(createdAt).getTime()
-  const totalMinutes = Math.max(0, Math.floor(diffMs / 60000))
-  const days = Math.floor(totalMinutes / 1440)
-  const hours = Math.floor((totalMinutes % 1440) / 60)
-  const minutes = totalMinutes % 60
-
-  if (days > 0) return `${days}d ${String(hours).padStart(2, '0')}h`
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
 }
 
 function getComplianceNote(order: PaymentOrder, quotePreparedAt: string | null) {
@@ -1003,9 +980,9 @@ function readPreviousQuote(order: PaymentOrder, key: 'exchange_rate_applied' | '
 function resolveOrderRoute(order: PaymentOrder): SupportedPaymentRoute | null {
   const metadataRoute =
     order.metadata &&
-    typeof order.metadata === 'object' &&
-    'route' in order.metadata &&
-    typeof order.metadata.route === 'string'
+      typeof order.metadata === 'object' &&
+      'route' in order.metadata &&
+      typeof order.metadata.route === 'string'
       ? order.metadata.route
       : null
 

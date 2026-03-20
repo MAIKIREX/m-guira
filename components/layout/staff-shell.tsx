@@ -1,12 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { Menu as MenuIcon, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react'
 import { StaffNavigation } from '@/components/layout/staff-navigation'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { Button } from '@/components/ui/button'
 import { UserMenu } from '@/features/auth/components/user-menu'
 import { NotificationBell } from '@/features/notifications/components/notification-bell'
+import { cn } from '@/lib/utils'
 
 export function StaffShell({
   children,
@@ -14,23 +15,49 @@ export function StaffShell({
   children: React.ReactNode
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isMobileOpen, setIsMobileOpen] = useState(false)
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background">
       <div
-        className="mx-auto grid min-h-screen max-w-[1600px] transition-[grid-template-columns] duration-200 md:[grid-template-columns:var(--sidebar-width)_minmax(0,1fr)]"
-        style={{ ['--sidebar-width' as string]: isCollapsed ? '88px' : '260px' }}
+        className="grid min-h-screen w-full transition-[grid-template-columns] duration-200 md:[grid-template-columns:var(--sidebar-width)_minmax(0,1fr)]"
+        style={{ ['--sidebar-width' as string]: isCollapsed ? '88px' : '280px' }}
       >
-        <aside className="relative hidden border-r border-border/60 bg-[linear-gradient(180deg,color-mix(in_oklab,var(--color-sidebar)_92%,white)_0%,color-mix(in_oklab,var(--color-muted)_55%,white)_100%)] md:block">
-          <div className="absolute inset-y-0 left-0 w-3 bg-[linear-gradient(180deg,color-mix(in_oklab,var(--color-primary)_24%,transparent)_0%,color-mix(in_oklab,var(--color-accent)_22%,transparent)_100%)]" />
-          <div className="sticky top-0 p-4">
-            <div className={`mb-6 rounded-[1.9rem] bg-background/55 shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--color-border)_85%,transparent)] ${isCollapsed ? 'p-3' : 'p-5'}`}>
+        {/* Mobile Sidebar Overlay */}
+        {isMobileOpen && (
+          <div
+            className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm md:hidden"
+            onClick={() => setIsMobileOpen(false)}
+          />
+        )}
+
+        {/* Mobile Sidebar */}
+        <aside className={cn(
+          "fixed inset-y-0 left-0 z-50 w-[280px] bg-background border-r transition-transform duration-300 ease-in-out md:hidden flex flex-col",
+          isMobileOpen ? "translate-x-0" : "-translate-x-full"
+        )}>
+          <div className="flex items-center justify-between border-b px-5 py-4">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.34em] text-muted-foreground/80">Guira</div>
+            <Button variant="ghost" size="icon" onClick={() => setIsMobileOpen(false)}>
+              <X className="size-5" />
+            </Button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto py-4">
+            <StaffNavigation collapsed={false} />
+          </div>
+        </aside>
+
+        {/* Desktop Sidebar */}
+        <aside className="relative hidden border-r border-border/60 md:block">
+          <div className="sticky top-0 flex min-h-screen flex-col">
+            <div className="border-b border-border/55 px-5 py-6">
               <div className={`flex items-start ${isCollapsed ? 'justify-center' : 'justify-between gap-3'}`}>
                 <div className={isCollapsed ? 'hidden' : 'min-w-0'}>
                   <div className="text-[11px] font-semibold uppercase tracking-[0.34em] text-muted-foreground/80">Guira</div>
-                  <div className="mt-3 text-lg font-semibold uppercase tracking-[0.16em] text-foreground/92">Control interno</div>
+                  <div className="mt-3 text-lg font-semibold uppercase tracking-[0.18em] text-foreground/92">Control interno</div>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Vista operativa para staff y admin con foco en trazabilidad y lectura rapida.
+                    Vista operativa para staff y admin con foco en trazabilidad.
                   </p>
                 </div>
 
@@ -48,31 +75,22 @@ export function StaffShell({
               </div>
             </div>
 
-            <StaffNavigation collapsed={isCollapsed} />
+            <div className="flex-1 overflow-y-auto py-5">
+              <StaffNavigation collapsed={isCollapsed} />
+            </div>
           </div>
         </aside>
 
+        {/* Main Content Area */}
         <div className="flex min-h-screen flex-col">
-          <header className="sticky top-0 z-10 border-b border-border/70 bg-background/90 backdrop-blur">
-            <div className="flex h-16 items-center justify-between px-4 md:px-6">
+          <header className="sticky top-0 z-40 border-b border-border/70 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+            <div className="flex items-center justify-between px-4 h-16 md:px-8">
               <div className="flex items-center gap-3">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  className="hidden border border-border/70 text-muted-foreground hover:text-foreground md:inline-flex"
-                  onClick={() => setIsCollapsed((value) => !value)}
-                  aria-label={isCollapsed ? 'Expandir menu lateral' : 'Colapsar menu lateral'}
-                  title={isCollapsed ? 'Expandir menu lateral' : 'Colapsar menu lateral'}
-                >
-                  {isCollapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
+                <Button variant="ghost" size="icon" onClick={() => setIsMobileOpen(true)} className="md:hidden">
+                  <MenuIcon className="size-6" />
                 </Button>
-                <div>
-                  <div className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Panel staff</div>
-                  <h1 className="text-lg font-medium tracking-tight">Lectura operativa</h1>
-                </div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.34em] text-muted-foreground/80 md:hidden">Guira</div>
               </div>
-
               <div className="flex items-center gap-4">
                 <ThemeToggle />
                 <NotificationBell />
@@ -81,7 +99,7 @@ export function StaffShell({
             </div>
           </header>
 
-          <main className="flex-1 p-4 md:p-6">{children}</main>
+          <main className="flex-1 p-4 md:p-8">{children}</main>
         </div>
       </div>
     </div>

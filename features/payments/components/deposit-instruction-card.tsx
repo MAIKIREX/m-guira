@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { Landmark } from 'lucide-react'
+import { Copy, FlipHorizontal2, Landmark } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -37,17 +38,23 @@ export function DepositInstructionCard({ instruction }: { instruction: DepositIn
     )
   }
 
-  const frontLabel =
-    instruction.kind === 'bank'
-      ? 'Cara operativa con datos bancarios y QR.'
-      : instruction.kind === 'wallet'
-        ? 'Cara operativa con wallet de recepcion.'
-        : 'Cara operativa de la instruccion.'
   const frontRows = buildInstructionRows(instruction)
+  const primaryValue = getInstructionPrimaryValue(instruction)
+  const visiblePrimaryValue = getInstructionPrimaryDisplayValue(instruction, primaryValue)
+
+  async function handleCopyPrimaryValue() {
+    try {
+      await navigator.clipboard.writeText(primaryValue)
+      toast.success('Valor copiado.')
+    } catch (error) {
+      console.error('Failed to copy instruction value', error)
+      toast.error('No se pudo copiar el valor.')
+    }
+  }
 
   return (
-    <div className="space-y-3">
-      <div className="relative h-[280px] [perspective:1400px]">
+    <div className="relative h-[280px] [perspective:1400px]">
+      <div className="relative h-full">
         <motion.div
           animate={{ rotateY: isFlipped ? 180 : 0 }}
           className="relative h-full w-full"
@@ -65,15 +72,39 @@ export function DepositInstructionCard({ instruction }: { instruction: DepositIn
                   <div className="text-[11px] uppercase tracking-[0.28em] text-cyan-100/75">{getInstructionEyebrow(instruction)}</div>
                   <div className="mt-2 text-lg font-semibold tracking-[0.02em]">{instruction.title}</div>
                 </div>
-                <div className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-cyan-50/80">
-                  {getInstructionBadge(instruction)}
+                <div className="flex items-center gap-2">
+                  <div className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-cyan-50/80">
+                    {getInstructionBadge(instruction)}
+                  </div>
+                  <Button
+                    aria-label="Voltear tarjeta"
+                    className="rounded-full border border-white/15 bg-white/10 text-white backdrop-blur-sm hover:bg-white/18 hover:text-white"
+                    onClick={() => setIsFlipped(true)}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <FlipHorizontal2 className="size-4" />
+                  </Button>
                 </div>
               </div>
 
               <div className="mt-8">
                 <div className="text-[11px] uppercase tracking-[0.24em] text-cyan-100/65">{getInstructionPrimaryLabel(instruction)}</div>
-                <div className="mt-2 break-all font-mono text-2xl tracking-[0.14em] text-white">
-                  {getInstructionPrimaryValue(instruction)}
+                <div className="mt-2 flex items-start justify-between gap-3">
+                  <div className="min-w-0 font-mono text-2xl tracking-[0.14em] text-white">
+                    {visiblePrimaryValue}
+                  </div>
+                  <Button
+                    aria-label="Copiar valor"
+                    className="shrink-0 rounded-full border border-white/15 bg-white/10 text-white backdrop-blur-sm hover:bg-white/18 hover:text-white"
+                    onClick={handleCopyPrimaryValue}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <Copy className="size-4" />
+                  </Button>
                 </div>
               </div>
 
@@ -144,24 +175,32 @@ export function DepositInstructionCard({ instruction }: { instruction: DepositIn
             <div className="relative flex h-full flex-col justify-between">
               <div className="flex items-center justify-between">
                 <div className="text-[11px] uppercase tracking-[0.3em] text-violet-100/70">Guira</div>
-                <div className="h-9 w-14 rounded-md bg-white/10" />
-              </div>
-
-              <div className="flex flex-1 items-center justify-center py-6">
-                <div className="rounded-[28px] border border-white/10 bg-white/6 px-8 py-6 backdrop-blur-[1px]">
-                  <Image
-                    src="/logo.png"
-                    alt="Guira"
-                    width={172}
-                    height={56}
-                    className="h-auto w-[140px] object-contain"
-                    unoptimized
-                  />
+                <div className="flex items-center gap-2">
+                  <Button
+                    aria-label="Volver al frente"
+                    className="rounded-full border border-white/15 bg-white/10 text-white backdrop-blur-sm hover:bg-white/18 hover:text-white"
+                    onClick={() => setIsFlipped(false)}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <FlipHorizontal2 className="size-4" />
+                  </Button>
                 </div>
               </div>
 
+              <div className="flex flex-1 items-center justify-center py-6">
+                <Image
+                  src="/logo.png"
+                  alt="Guira"
+                  width={172}
+                  height={56}
+                  className="h-auto w-[100px] object-contain"
+                  unoptimized
+                />
+              </div>
+
               <div className="space-y-3">
-                <div className="h-10 rounded-full bg-black/30" />
                 <div className="text-center text-xs text-violet-100/72">
                   Medio de fondeo validado por Guira para este expediente.
                 </div>
@@ -169,18 +208,6 @@ export function DepositInstructionCard({ instruction }: { instruction: DepositIn
             </div>
           </div>
         </motion.div>
-      </div>
-
-      <div className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-background/85 px-4 py-3">
-        <div>
-          <div className="text-sm font-medium text-foreground">{instruction.title}</div>
-          <div className="text-xs text-muted-foreground">
-            {isFlipped ? 'Cara institucional con marca Guira.' : frontLabel}
-          </div>
-        </div>
-        <Button onClick={() => setIsFlipped((current) => !current)} size="sm" type="button" variant="outline">
-          {isFlipped ? 'Volver al frente' : 'Voltear tarjeta'}
-        </Button>
       </div>
     </div>
   )
@@ -242,6 +269,14 @@ function getInstructionPrimaryValue(instruction: DepositInstruction) {
   }
 
   return instruction.detail
+}
+
+function getInstructionPrimaryDisplayValue(instruction: DepositInstruction, value: string) {
+  if (instruction.kind === 'bank' && value.length > 12) {
+    return `${value.slice(0, 7)}.....`
+  }
+
+  return value
 }
 
 function getInstructionFooter(instruction: DepositInstruction) {

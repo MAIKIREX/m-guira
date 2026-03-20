@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { FileDropzone } from '@/components/shared/file-dropzone'
+import { DocumentUploadCard } from '@/components/shared/document-upload-card'
 import { Textarea } from '@/components/ui/textarea'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import {
@@ -640,8 +640,14 @@ function OrderCompletionDialog({ actor, onUpdated, order }: { actor: StaffActor;
         <Form {...form}>
           <form className="space-y-4" onSubmit={form.handleSubmit(submit)}>
             <div className="space-y-2">
-              <Label htmlFor="staff-order-completion-file">Comprobante final</Label>
-              <FileDropzone accept={ACCEPTED_UPLOADS} file={file} helperText="Arrastra el comprobante final o haz click para seleccionarlo." onFileSelect={setFile} />
+              <DocumentUploadCard
+                accept={ACCEPTED_UPLOADS}
+                className="rounded-2xl"
+                file={file}
+                helperText="Arrastra el comprobante final o haz click para seleccionarlo."
+                label="Comprobante final"
+                onFileChange={setFile}
+              />
             </div>
             <FormField control={form.control} name="reason" render={({ field }) => (
               <FormItem>

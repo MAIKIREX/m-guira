@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -50,7 +50,7 @@ import {
   type DepositInstruction,
 } from '@/features/payments/lib/deposit-instructions'
 import { DepositInstructionCard } from '@/features/payments/components/deposit-instruction-card'
-import { DocumentUploadCard } from '@/components/shared/document-upload-card'
+import { FileDropzone } from '@/components/shared/file-dropzone'
 import { StepProgressRail } from '@/features/payments/components/step-progress-rail'
 import { CRYPTO_NETWORK_OPTIONS, resolveCryptoNetwork } from '@/features/payments/lib/crypto-networks'
 import {
@@ -1157,13 +1157,68 @@ function DocumentInputCard({
   file: File | null
   onFileChange: (file: File | null) => void
 }) {
+  const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file])
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
+    }
+  }, [previewUrl])
+
+  const isImage = Boolean(file && file.type.startsWith('image/'))
+
   return (
-    <DocumentUploadCard
-      label={label}
-      description={description}
-      file={file}
-      onFileChange={onFileChange}
-    />
+    <div className="border-t border-border/60 pt-4">
+      <div className="mb-3 flex items-start gap-3">
+        <div className="rounded-xl border border-border/60 bg-muted/20 p-2 text-muted-foreground">
+          <Upload className="size-4" />
+        </div>
+        <div>
+          <div className="text-sm font-semibold tracking-[0.01em] text-foreground">{label}</div>
+          <div className="text-sm leading-6 tracking-[0.01em] text-muted-foreground">{description}</div>
+        </div>
+      </div>
+      <FileDropzone
+        accept={ACCEPTED_UPLOADS}
+        helperText="Arrastra el archivo o haz click para seleccionarlo."
+        file={file}
+        onFileSelect={onFileChange}
+      />
+      <div className="mt-3 rounded-2xl border border-dashed border-border/60 bg-muted/10 p-3">
+        {file ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-medium tracking-[0.01em] text-foreground">{file.name}</div>
+                <div className="text-xs text-muted-foreground">{Math.round(file.size / 1024)} KB</div>
+              </div>
+              {previewUrl ? (
+                <a className="text-sm font-medium text-primary underline-offset-4 hover:underline" href={previewUrl} rel="noreferrer" target="_blank">
+                  Abrir
+                </a>
+              ) : null}
+            </div>
+            {isImage && previewUrl ? (
+              <Image
+                alt={file.name}
+                className="h-40 w-full rounded-xl border border-border/60 object-cover"
+                height={160}
+                src={previewUrl}
+                unoptimized
+                width={640}
+              />
+            ) : (
+              <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-background/80 px-3 py-2 text-sm text-muted-foreground">
+                <FileText className="size-4" />
+                Vista previa disponible en una pesta├▒a nueva.
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-sm text-muted-foreground">Aun no seleccionaste un archivo.</div>
+        )}
+      </div>
+    </div>
   )
 }
 

@@ -77,16 +77,7 @@ export function buildDepositInstructions(args: {
 
   switch (args.route) {
     case 'bolivia_to_exterior':
-      return [
-        ...psavInstructions,
-        {
-          id: 'bo-note',
-          title: 'Referencia de expediente',
-          kind: 'note' as const,
-          detail: 'Usa el numero de expediente como referencia del deposito para acelerar la conciliacion.',
-          accent: 'amber',
-        },
-      ]
+      return psavInstructions
     case 'us_to_bolivia':
       return [
         {
@@ -95,12 +86,6 @@ export function buildDepositInstructions(args: {
           kind: 'bank' as const,
           detail: 'Bank of Example | Checking 00123456789 | ABA 021000021 | Holder: Guira Operations LLC',
           accent: 'sky',
-        },
-        {
-          id: 'world-hardcoded-note',
-          title: 'Comprobante de deposito',
-          kind: 'note' as const,
-          detail: 'Puedes adjuntar el comprobante ahora o completarlo despues desde Transacciones cuando el deposito ya este enviado.',
         },
       ]
     case 'us_to_wallet':
@@ -116,13 +101,6 @@ export function buildDepositInstructions(args: {
                 accent: 'emerald',
               },
             ]),
-        {
-          id: 'wallet-proof-note',
-          title: 'Comprobante de fondeo',
-          kind: 'note' as const,
-          detail: 'Cuando completes el deposito en PSAV, sube el comprobante aqui o luego desde Transacciones para mover la orden a waiting_deposit.',
-          accent: 'amber',
-        },
       ]
     case 'crypto_to_crypto':
       return [
@@ -138,12 +116,6 @@ export function buildDepositInstructions(args: {
           title: 'Wallet Guira Tron',
           kind: 'wallet',
           detail: 'TLbT1mV7W6YFJ5w8x5dWQ1U1w6E4JmF8GQ',
-        },
-        {
-          id: 'crypto-note',
-          title: args.selectedSupplier?.name ? `Destino vinculado a ${args.selectedSupplier.name}` : 'Importante',
-          kind: 'note',
-          detail: 'Verifica que la red del deposito coincida con la red del destino antes de transferir. El hash podra cargarse despues desde Transacciones.',
         },
       ]
   }
