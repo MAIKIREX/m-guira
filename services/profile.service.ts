@@ -7,31 +7,33 @@ export const ProfileService = {
     try {
       const supabase = createClient()
       
-      const queryPromise = supabase
+      const query = supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle()
 
+      console.log('ProfileService: executing query with internal 5s timeout...')
+      
       const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout al cargar el perfil')), 8000)
+        setTimeout(() => reject(new Error('TIMEOUT_DB_QUERY')), 5000)
       )
-      type ProfileQueryResult = Awaited<typeof queryPromise>
 
-      console.log('ProfileService: executing query with timeout...')
-      const result: ProfileQueryResult = await Promise.race([queryPromise, timeoutPromise])
-      const { data, error } = result
-
-      console.log('ProfileService: query result received', { data: !!data, error: !!error })
+      const { data, error, status, statusText } = await Promise.race([
+        query,
+        timeoutPromise
+      ])
+      
+      console.log('ProfileService: query result received', { data: !!data, error, status, statusText })
 
       if (error) {
-        console.error('ProfileService: error in query', error)
-        throw new Error(error.message || 'No se pudo cargar el perfil.')
+        console.error('ProfileService: getProfile query returned error', error)
+        return null
       }
-
+      
       return (data as Profile | null) ?? null
     } catch (e) {
-      console.error('ProfileService: getProfile error', e)
+      console.error('ProfileService: getProfile CRITICAL CATCH', e)
       return null 
     }
   },

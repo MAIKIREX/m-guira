@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/browser'
 import { useAuthStore } from '@/stores/auth-store'
@@ -23,13 +23,14 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { setSession, setUser } = useAuthStore()
   const { profile: storedProfile, setProfile } = useProfileStore()
   const supabase = useMemo(() => createClient(), [])
+  const isSyncingRef = useRef(false)
   const publicPath = isPublicPath(pathname)
 
   // Usamos refs para evitar loops en los efectos
   const storedProfileRef = useRef(storedProfile)
   useEffect(() => { storedProfileRef.current = storedProfile }, [storedProfile])
 
-  async function handleRedirect(profile: Profile, nextPathname: string) {
+  const handleRedirect = useCallback(async (profile: Profile, nextPathname: string) => {
     const dest = await resolveRedirect({
       pathname: nextPathname,
       profile,
@@ -44,98 +45,115 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     if (dest && dest !== nextPathname) {
       router.replace(dest)
     }
-  }
+  }, [router, setProfile, setSession, setUser, supabase.auth])
 
-  async function syncProfileAndRedirect(session: Session, nextPathname: string) {
-    setSession(session)
-    setUser(session.user)
-
-    const cachedProfile =
-      storedProfileRef.current && storedProfileRef.current.id === session.user.id
-        ? storedProfileRef.current
-        : null
-
-    if (cachedProfile) {
-      await handleRedirect(cachedProfile, nextPathname)
+  const syncProfileAndRedirect = useCallback(async (session: Session, nextPathname: string) => {
+    if (isSyncingRef.current) return
+    
+    // Si ya tenemos el perfil cargado y es el correcto, no re-sincronizar
+    if (storedProfileRef.current && storedProfileRef.current.id === session.user.id) {
+      console.log('AuthGuard: Profile already synced and matches user, skipping redundant sync')
+      await handleRedirect(storedProfileRef.current, nextPathname)
       return
     }
 
-    const profile = await getProfileWithRetry(session.user.id)
-    if (profile) {
-      setProfile(profile)
-      await handleRedirect(profile, nextPathname)
-      return
+    try {
+      isSyncingRef.current = true
+      console.log('AuthGuard: syncProfileAndRedirect starting for', session.user.id)
+      
+      const profile = await getProfileWithRetry(session.user.id)
+      if (profile) {
+        setSession(session)
+        setUser(session.user)
+        setProfile(profile)
+        await handleRedirect(profile, nextPathname)
+        return
+      }
+
+      console.error('AuthGuard: profile sync failed - signing out')
+      await supabase.auth.signOut()
+      setSession(null)
+      setUser(null)
+      setProfile(null)
+      router.replace('/login')
+    } catch (error) {
+      console.error('AuthGuard: syncProfileAndRedirect CRITICAL ERROR', error)
+    } finally {
+      isSyncingRef.current = false
     }
+  }, [handleRedirect, router, setProfile, setSession, setUser, supabase.auth])
 
-    await supabase.auth.signOut()
-    setSession(null)
-    setUser(null)
-    setProfile(null)
-    router.replace('/login')
-  }
-
-  // 1. Efecto para inicializar Auth (solo al montar o si cambia el pathname radicalmente)
+  // Efecto único para inicializar y escuchar cambios de auth
   useEffect(() => {
     let mounted = true
-
-    async function checkAuth() {
-      // No reseteamos loading si ya estamos en una ruta privada y tenemos perfil
-      // Solo mostramos cargando si es el bootstrap inicial o si no tenemos sesión
-      if (!bootstrappedRef.current) {
-        setLoading(true)
+    const timeoutId = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn('AuthGuard: Global boot timeout reached')
+        setLoading(false)
+        bootstrappedRef.current = true
       }
+    }, 15000)
 
+    async function initializeAndListen() {
       try {
-        console.log('AuthGuard: checking auth for', pathname)
-        const { data: { session } } = await supabase.auth.getSession()
-
-        if (!mounted) return
-
-        if (!session) {
-          setSession(null)
-          setUser(null)
-          setProfile(null)
-          if (!publicPath) {
-            router.replace('/login')
-          }
-          setLoading(false)
-          bootstrappedRef.current = true
-          return
+        console.log('AuthGuard: initializing auth...')
+        
+        // 1. Obtener la sesión inicial primero de forma secuencial
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        if (sessionError) console.error('AuthGuard: getSession error', sessionError)
+        
+        if (mounted && session && !isSyncingRef.current) {
+          await syncProfileAndRedirect(session, window.location.pathname)
+        } else if (mounted && !session && !isPublicPath(window.location.pathname)) {
+          router.replace('/login')
         }
 
-        await syncProfileAndRedirect(session, pathname)
+        // 2. SOLO DESPUES de la inicialización, nos suscribimos a cambios
+        if (mounted) {
+          const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log('AuthGuard: onAuthStateChange event:', event)
+            
+            if (event === 'SIGNED_OUT') {
+              setSession(null)
+              setUser(null)
+              setProfile(null)
+              if (!isPublicPath(window.location.pathname)) {
+                router.replace('/login')
+              }
+              return
+            }
+
+            // Ignoramos INITIAL_SESSION aquí porque ya lo manejamos con getSession arriba
+            if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+              await syncProfileAndRedirect(session, window.location.pathname)
+            }
+          })
+
+          return () => {
+            subscription.unsubscribe()
+          }
+        }
       } catch (error) {
-        console.error('AuthGuard: init error', error)
+        console.error('AuthGuard: initializeAndListen error', error)
       } finally {
         if (mounted) {
+          clearTimeout(timeoutId)
           setLoading(false)
           bootstrappedRef.current = true
         }
       }
     }
 
-    checkAuth()
+    const cleanupPromise = initializeAndListen()
 
-    return () => { mounted = false }
-  }, [pathname, publicPath, supabase, router, setProfile, setSession, setUser])
+    return () => {
+      mounted = false
+      clearTimeout(timeoutId)
+      void cleanupPromise.then(cleanup => cleanup?.())
+    }
+  }, [supabase, router, setProfile, setSession, setUser, syncProfileAndRedirect, loading])
 
-  // 2. Efecto para escuchar cambios de auth (solo una vez al montar)
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
-      console.log('AuthGuard: onAuthStateChange', event)
-      if (event === 'SIGNED_OUT') {
-        setSession(null)
-        setUser(null)
-        setProfile(null)
-        router.replace('/login')
-      } else if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-        await syncProfileAndRedirect(session, pathname)
-      }
-    })
-    return () => subscription.unsubscribe()
-  }, [pathname, supabase, router, setProfile, setSession, setUser])
-
-  if (loading && !publicPath) {
+  if (loading || (!storedProfile && !publicPath)) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
         <div className="size-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
