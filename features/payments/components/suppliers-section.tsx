@@ -114,7 +114,7 @@ export function SuppliersSection({
         />
       ) : (
         <>
-          <section className="flex flex-col gap-4 rounded-3xl border border-border/70  p-6 shadow-sm">
+          <section className="flex flex-col gap-4  p-6 ">
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div className="space-y-2">
                 <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">Proveedores</div>
@@ -148,7 +148,7 @@ export function SuppliersSection({
             </div>
           </section>
 
-          <Card className="border-border/70 bg-background">
+          <Card className="border-border/70 bg-background ring-0">
             <CardHeader>
               <CardTitle>Destinatarios guardados</CardTitle>
               <CardDescription>La edicion y la creacion usan el nuevo flujo por etapas con multiples cuentas por proveedor.</CardDescription>

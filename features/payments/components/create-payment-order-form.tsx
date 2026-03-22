@@ -507,7 +507,7 @@ export function CreatePaymentOrderForm({
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
-      <Card className="border-border/60 bg-background/70 shadow-none">
+      <Card className="ring-0 shadow-none bg-background">
         <CardHeader className="border-b border-border/60 bg-transparent">
           <CardTitle className="text-2xl font-semibold tracking-[-0.03em]">
             {isDepositRouteActive ? 'Depositar por expediente' : 'Enviar por expediente'}

@@ -54,7 +54,13 @@ export function DocumentUploadCard({
   }, [previewUrl])
 
   return (
-    <div className={cn('rounded-[24px] border border-border/60 bg-background/75 p-4 text-left', className)}>
+    <div
+      className={cn(
+        'rounded-[24px] border border-border/60 bg-background/75 p-4 text-left transition duration-200',
+        !disabled && !uploading && 'hover:border-primary/40 hover:bg-background hover:shadow-sm',
+        className
+      )}
+    >
       <div className="mb-3 flex items-start gap-3">
         <div className="rounded-xl border border-border/60 bg-muted/20 p-2 text-muted-foreground">
           <Upload className="size-4" />

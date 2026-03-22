@@ -82,7 +82,8 @@ export function FileDropzone({
         <div
           {...dropzone.getRootProps()}
           className={cn(
-            'rounded-2xl border border-dashed border-border/70 bg-muted/15 p-5 transition',
+            'rounded-2xl border border-dashed border-border/70 bg-muted/15 p-5 transition duration-200',
+            !disabled && 'cursor-pointer hover:border-primary/45 hover:bg-primary/5',
             dropzone.isDragActive && 'border-primary bg-primary/5',
             disabled && 'pointer-events-none opacity-60'
           )}
