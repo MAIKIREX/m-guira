@@ -268,11 +268,11 @@ export function OrderDetailDialog({ actor, onUpdated, order }: { actor: StaffAct
   return (
     <Dialog>
       <DialogTrigger render={<Button size="sm" variant="secondary" />}>Gestionar Orden</DialogTrigger>
-      <DialogContent className="max-h-[92vh] w-[calc(100vw-1rem)] max-w-none overflow-x-hidden overflow-y-auto border border-border/70 bg-background/95 p-0 shadow-2xl sm:max-w-none sm:w-[min(95vw,1100px)] lg:w-[min(92vw,1240px)] supports-backdrop-filter:backdrop-blur-md">
-        <DialogHeader className="gap-4 border-b border-border/70 bg-gradient-to-r from-primary/[0.11] via-background to-accent/[0.08] px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+      <DialogContent className="max-h-[92vh] w-[calc(100vw-1rem)] max-w-none overflow-x-hidden overflow-y-auto border border-border bg-background p-0 shadow-xl sm:max-w-none sm:w-[min(95vw,1100px)] lg:w-[min(92vw,1240px)]">
+        <DialogHeader className="gap-4 border-b border-border bg-muted/10 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
           <div className="flex min-w-0 flex-col gap-4 2xl:flex-row 2xl:items-start 2xl:justify-between">
             <div className="flex min-w-0 items-start gap-4">
-              <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/12 text-primary shadow-sm">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary shadow-sm">
                 <ReceiptText className="size-5" />
               </div>
               <div className="min-w-0 space-y-2">
@@ -322,11 +322,11 @@ export function OrderDetailDialog({ actor, onUpdated, order }: { actor: StaffAct
                 description="Solo se muestran los campos de destino que esta orden ya tiene cargados en metadata."
               />
               {destinationInfo.length > 0 ? (
-                <div className="overflow-hidden rounded-[28px] border border-border/70 bg-card/80 shadow-sm">
+                <div className="overflow-hidden rounded-[28px] border border-border bg-card shadow-sm">
                   {destinationInfo.map((item) => (
                     <div
                       key={item.label}
-                      className="flex flex-col gap-2 border-b border-border/60 px-4 py-4 last:border-b-0 sm:flex-row sm:items-start sm:justify-between sm:gap-6"
+                      className="flex flex-col gap-2 border-b border-border/55 px-4 py-4 last:border-b-0 sm:flex-row sm:items-start sm:justify-between sm:gap-6"
                     >
                       <span className="block shrink-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:w-48">
                         {item.label}
@@ -345,7 +345,7 @@ export function OrderDetailDialog({ actor, onUpdated, order }: { actor: StaffAct
           </div>
 
           <aside className="min-w-0 space-y-4">
-            <section className="rounded-[28px] border border-border/70 bg-card/80 p-4 shadow-sm">
+            <section className="rounded-[28px] bg-transparent p-4">
               <SectionHeading
                 eyebrow="Documentos"
                 title="Respaldo y comprobantes"
@@ -363,7 +363,7 @@ export function OrderDetailDialog({ actor, onUpdated, order }: { actor: StaffAct
               </div>
             </section>
 
-            <section className="rounded-[28px] border border-border/70 bg-card/80 p-4 shadow-sm">
+            <section className="rounded-[28px] bg-transparent p-4">
               <SectionHeading
                 eyebrow="Paso actual"
                 title="Que se espera realizar"
@@ -378,7 +378,7 @@ export function OrderDetailDialog({ actor, onUpdated, order }: { actor: StaffAct
               </div>
             </section>
 
-            <section className="rounded-[28px] border border-border/70 bg-card/80 p-4 shadow-sm">
+            <section className="rounded-[28px] bg-transparent p-4">
               <SectionHeading eyebrow="Acciones" title="Gestion operativa" />
               <div className="mt-4">
                 <div className="flex flex-col gap-3">
@@ -432,7 +432,7 @@ function SummaryMetricCard({
         : 'border-primary/20 bg-primary/[0.06] text-primary'
 
   return (
-    <div className="min-w-0 rounded-[24px] border border-border/70 bg-card/80 p-4 shadow-sm">
+    <div className="min-w-0 rounded-[24px] border border-border bg-card px-4 py-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-2">
           <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
@@ -461,24 +461,32 @@ function DocumentStatusCard({
 }) {
   const toneClassName =
     tone === 'success'
-      ? 'border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-700 dark:text-emerald-300'
-      : 'border-border/70 bg-background/80 text-primary'
+      ? 'bg-emerald-500/[0.08] text-emerald-700 dark:text-emerald-300'
+      : 'bg-background/80 text-primary'
+  const uploadedCardClassName = href
+    ? tone === 'success'
+      ? 'border-emerald-500/40 bg-emerald-500/[0.045]'
+      : 'border-sky-500/34 bg-sky-500/[0.035] dark:border-cyan-400/36 dark:bg-cyan-400/[0.04]'
+    : 'border-border bg-background/90'
+  const interactionClassName = href
+    ? 'hover:-translate-y-0.5 hover:border-primary/20 hover:bg-background hover:shadow-sm'
+    : ''
 
   return (
-    <div className="min-w-0 rounded-2xl border border-border/70 bg-background/65 p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-background hover:shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex items-start gap-3">
-          <div className={'mt-0.5 flex size-9 items-center justify-center rounded-xl border ' + toneClassName}>
+    <div className={`min-w-0 rounded-2xl border px-3 py-3 transition-all duration-200 ${uploadedCardClassName} ${interactionClassName}`}>
+      <div className="flex min-h-12 items-center justify-between gap-3">
+        <div className="min-w-0 flex items-center gap-3">
+          <div className={'flex size-9 shrink-0 items-center justify-center rounded-xl ' + toneClassName}>
             {href ? <FileCheck2 className="size-4" /> : <FileText className="size-4" />}
           </div>
           <div className="min-w-0">
-            <div className="break-words text-sm font-medium text-foreground">{label}</div>
+            <div className="break-words text-sm font-medium leading-5 text-foreground">{label}</div>
           </div>
         </div>
         {href ? (
           <a
             aria-label={`Ver ${label}`}
-            className="inline-flex size-9 items-center justify-center rounded-full border border-border/70 bg-background text-primary transition-colors hover:bg-muted"
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-background text-primary transition-colors hover:bg-muted"
             href={href}
             rel="noreferrer"
             target="_blank"
@@ -488,7 +496,7 @@ function DocumentStatusCard({
         ) : (
           <span
             aria-label={emptyMessage}
-            className="inline-flex size-9 items-center justify-center rounded-full border border-dashed border-border/70 bg-muted/20 text-muted-foreground"
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-dashed border-border bg-muted/15 text-muted-foreground"
           >
             <Eye className="size-4" />
           </span>
@@ -500,7 +508,7 @@ function DocumentStatusCard({
 
 function EmptyPanel({ message }: { message: string }) {
   return (
-    <div className="rounded-[24px] border border-dashed border-border/70 bg-muted/10 px-4 py-5 text-sm leading-6 text-muted-foreground">
+    <div className="rounded-[24px] border border-dashed border-border bg-muted/10 px-4 py-5 text-sm leading-6 text-muted-foreground">
       {message}
     </div>
   )
