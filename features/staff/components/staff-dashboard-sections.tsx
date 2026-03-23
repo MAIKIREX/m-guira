@@ -147,61 +147,138 @@ export function StaffOnboardingTable({
           resultsCount={filteredRecords.length}
           totalCount={records.length}
         />
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Cliente</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Actualizado</TableHead>
-              <TableHead>Observaciones</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {records.length === 0 ? (
-              <EmptyRow colSpan={6} message="No hay registros de onboarding." />
-            ) : hasActiveFilters && filteredRecords.length === 0 ? (
-              <EmptyRow colSpan={6} message="No hay resultados con los filtros actuales." />
-            ) : (
-              filteredRecords.map((record) => (
-                <TableRow key={record.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="size-10 rounded-xl ring-1 ring-border/70">
-                        <AvatarImage
-                          alt={record.profiles?.full_name ?? 'Cliente'}
-                          src={record.client_photo_url ?? undefined}
-                        />
-                        <AvatarFallback className="rounded-xl bg-muted/70 text-[0.8rem] font-semibold text-foreground/80">
-                          {getInitials(record.profiles?.full_name ?? record.profiles?.email ?? record.user_id)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0">
-                        <div className="font-medium">{record.profiles?.full_name ?? 'Sin nombre'}</div>
-                        <div className="truncate text-xs text-muted-foreground">{record.profiles?.email ?? record.user_id}</div>
+        <div className="space-y-3 md:hidden">
+          {records.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border/70 bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
+              No hay registros de onboarding.
+            </div>
+          ) : hasActiveFilters && filteredRecords.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border/70 bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
+              No hay resultados con los filtros actuales.
+            </div>
+          ) : (
+            filteredRecords.map((record) => (
+              <Card key={record.id} className="border-border/70 bg-card/95 shadow-sm">
+                <CardContent className="space-y-4 p-4">
+                  <div className="flex items-start gap-3">
+                    <Avatar className="size-11 rounded-xl ring-1 ring-border/70">
+                      <AvatarImage
+                        alt={record.profiles?.full_name ?? 'Cliente'}
+                        src={record.client_photo_url ?? undefined}
+                      />
+                      <AvatarFallback className="rounded-xl bg-muted/70 text-[0.8rem] font-semibold text-foreground/80">
+                        {getInitials(record.profiles?.full_name ?? record.profiles?.email ?? record.user_id)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium text-foreground">{record.profiles?.full_name ?? 'Sin nombre'}</div>
+                      <div className="mt-1 break-all text-xs text-muted-foreground">{record.profiles?.email ?? record.user_id}</div>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 rounded-xl border border-border/60 bg-muted/15 p-3 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Estado</div>
+                      <StatusBadge value={record.status} />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Tipo</div>
+                      <div className="text-sm font-medium text-foreground">{record.type}</div>
+                    </div>
+                    <div className="space-y-1 sm:col-span-2">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Actualizado</div>
+                      <div className="text-sm text-foreground">{formatDate(record.updated_at)}</div>
+                    </div>
+                    {record.observations ? (
+                      <div className="space-y-1 sm:col-span-2">
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Observaciones</div>
+                        <p className="overflow-hidden text-sm leading-6 text-muted-foreground [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3]">
+                          {record.observations}
+                        </p>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{record.type}</TableCell>
-                  <TableCell><StatusBadge value={record.status} /></TableCell>
-                  <TableCell>{formatDate(record.updated_at)}</TableCell>
-                  <TableCell className="max-w-[280px] truncate">{record.observations || 'Sin observaciones'}</TableCell>
-                  <TableCell>
-                    <div className="flex justify-end">
-                      <Link
-                        className="inline-flex h-7 items-center justify-center rounded-[min(var(--radius-md),12px)] border border-border bg-background px-2.5 text-[0.8rem] font-medium transition-colors hover:bg-muted"
-                        href={`/admin/onboarding/${record.id}`}
-                      >
-                        Ver detalles
-                      </Link>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+                    ) : null}
+                  </div>
+
+                  <div className="flex justify-end">
+                    <Link
+                      className="inline-flex h-9 items-center justify-center rounded-[min(var(--radius-md),12px)] border border-border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted"
+                      href={`/admin/onboarding/${record.id}`}
+                    >
+                      Ver detalles
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+
+        <div className="hidden md:block">
+          <Table className="[&_td]:whitespace-normal [&_td]:px-3 [&_td]:py-3 [&_th]:h-auto [&_th]:px-3 [&_th]:py-3">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="min-w-[260px]">Cliente</TableHead>
+                <TableHead className="w-[120px]">Tipo</TableHead>
+                <TableHead className="w-[130px]">Estado</TableHead>
+                <TableHead className="w-[150px]">Actualizado</TableHead>
+                <TableHead className="hidden xl:table-cell xl:min-w-[260px]">Observaciones</TableHead>
+                <TableHead className="w-[130px] text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {records.length === 0 ? (
+                <EmptyRow colSpan={6} message="No hay registros de onboarding." />
+              ) : hasActiveFilters && filteredRecords.length === 0 ? (
+                <EmptyRow colSpan={6} message="No hay resultados con los filtros actuales." />
+              ) : (
+                filteredRecords.map((record) => (
+                  <TableRow key={record.id}>
+                    <TableCell className="min-w-0">
+                      <div className="flex items-start gap-3">
+                        <Avatar className="size-10 shrink-0 rounded-xl ring-1 ring-border/70">
+                          <AvatarImage
+                            alt={record.profiles?.full_name ?? 'Cliente'}
+                            src={record.client_photo_url ?? undefined}
+                          />
+                          <AvatarFallback className="rounded-xl bg-muted/70 text-[0.8rem] font-semibold text-foreground/80">
+                            {getInitials(record.profiles?.full_name ?? record.profiles?.email ?? record.user_id)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 space-y-1">
+                          <div className="font-medium">{record.profiles?.full_name ?? 'Sin nombre'}</div>
+                          <div className="break-all text-xs text-muted-foreground">{record.profiles?.email ?? record.user_id}</div>
+                          <div className="xl:hidden text-xs text-muted-foreground">
+                            {record.observations || 'Sin observaciones'}
+                          </div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="align-top">
+                      <span className="text-sm font-medium text-foreground">{record.type}</span>
+                    </TableCell>
+                    <TableCell className="align-top"><StatusBadge value={record.status} /></TableCell>
+                    <TableCell className="align-top text-sm text-foreground">{formatDate(record.updated_at)}</TableCell>
+                    <TableCell className="hidden max-w-[280px] align-top text-sm text-muted-foreground xl:table-cell">
+                      <div className="overflow-hidden [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
+                        {record.observations || 'Sin observaciones'}
+                      </div>
+                    </TableCell>
+                    <TableCell className="align-top">
+                      <div className="flex justify-end">
+                        <Link
+                          className="inline-flex h-8 items-center justify-center rounded-[min(var(--radius-md),12px)] border border-border bg-background px-2.5 text-[0.8rem] font-medium transition-colors hover:bg-muted"
+                          href={`/admin/onboarding/${record.id}`}
+                        >
+                          Ver detalles
+                        </Link>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   )
@@ -1403,7 +1480,7 @@ function TableFilters({
 
   return (
     <div className="rounded-xl border border-border/70 bg-muted/15 p-4">
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_repeat(auto-fit,minmax(180px,1fr))]">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(auto-fit,minmax(180px,1fr))]">
         <div className="space-y-2">
           <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
             Buscar
