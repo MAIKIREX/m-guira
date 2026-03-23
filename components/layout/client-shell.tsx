@@ -3,10 +3,8 @@
 import { useState } from 'react'
 import { Menu as MenuIcon, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react'
 import { ClientNavigation } from '@/components/layout/client-navigation'
-import { ThemeToggle } from '@/components/theme/theme-toggle'
+import { SidebarUtilities } from '@/components/layout/sidebar-utilities'
 import { Button } from '@/components/ui/button'
-import { UserMenu } from '@/features/auth/components/user-menu'
-import { NotificationBell } from '@/features/notifications/components/notification-bell'
 import { cn } from '@/lib/utils'
 
 
@@ -48,6 +46,7 @@ export function ClientShell({
             <ClientNavigation collapsed={false} />
           </div>
 
+          <SidebarUtilities mobile />
         </aside>
 
         {/* Desktop Sidebar */}
@@ -80,26 +79,22 @@ export function ClientShell({
               <ClientNavigation collapsed={isCollapsed} />
             </div>
 
+            <SidebarUtilities collapsed={isCollapsed} />
           </div>
         </aside>
 
         {/* Main Content Area */}
         <div className="flex min-h-screen flex-col">
-          <header className="sticky top-0 z-40 border-b border-border/70 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-            <div className="flex items-center justify-between px-4 h-16 md:px-8">
-              <div className="flex items-center gap-3">
-                <Button variant="ghost" size="icon" onClick={() => setIsMobileOpen(true)} className="md:hidden">
-                  <MenuIcon className="size-6" />
-                </Button>
-                <div className="text-[11px] font-semibold uppercase tracking-[0.34em] text-muted-foreground/80 md:hidden">Guira</div>
-              </div>
-              <div className="flex items-center gap-4">
-                <ThemeToggle />
-                <NotificationBell />
-                <UserMenu />
-              </div>
-            </div>
-          </header>
+          <div className="sticky top-4 z-40 flex px-4 md:hidden">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setIsMobileOpen(true)}
+              className="border-border/70 bg-background/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80"
+            >
+              <MenuIcon className="size-6" />
+            </Button>
+          </div>
 
           <main className="flex-1 px-4 py-8 md:px-8">
             {children}

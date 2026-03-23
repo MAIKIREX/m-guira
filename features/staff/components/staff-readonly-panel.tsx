@@ -6,7 +6,7 @@ import {
   AlertTriangle,
   ArrowRightLeft,
   Bell,
-  CircleDollarSign,  Loader2,
+  CircleDollarSign, Loader2,
   RefreshCw,
   ShieldCheck,
   Users,
@@ -95,8 +95,8 @@ export function StaffReadonlyPanel() {
 
   return (
     <div className="space-y-6">
-      <section className="grid gap-4 xl:grid-cols-[1.65fr_0.95fr]">
-        <Card className="border-border/80 bg-muted/10">
+      <section className="grid gap-4 xl:grid-cols-1">
+        <Card className="border-border/80 bg-muted/10 ">
           <CardHeader className="gap-4 border-b border-border/60 bg-background/95 md:flex-row md:items-start md:justify-between">
             <div className="space-y-2">
               <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">Centro de control interno</div>
@@ -111,45 +111,14 @@ export function StaffReadonlyPanel() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-5 p-6">
-            {snapshot.gaps.length > 0 ? (
-              <div className="rounded-2xl border border-dashed border-border/70 p-4 text-sm">
-                <div className="mb-2 flex items-center gap-2 font-medium text-foreground">
-                  <AlertTriangle className="size-4" />
-                  Limites documentales detectados
-                </div>
-                <ul className="space-y-1 text-muted-foreground">
-                  {snapshot.gaps.map((gap) => (
-                    <li key={gap}>{gap}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-
             <div className="grid gap-3 md:grid-cols-4">
               <MetricCard icon={ShieldCheck} label="Onboarding" value={String(snapshot.onboarding.length)} />
               <MetricCard icon={ArrowRightLeft} label="Orders" value={String(snapshot.orders.length)} />
               <MetricCard icon={CircleDollarSign} label="Support" value={String(snapshot.support.length)} />
               <MetricCard icon={Users} label="Users" value={String(snapshot.users.length)} />
             </div>
-
-            <div className="grid gap-3 md:grid-cols-3">
-              <RoleCard
-                title="Staff"
-                body="Valida onboards, confirma depositos, publica cotizaciones, registra sent/completed y mueve soporte."
-              />
-              <RoleCard
-                title="Cliente"
-                body="Sigue el expediente, descarga respaldos y recibe el avance del staff desde su panel."
-              />
-              <RoleCard
-                title="Admin"
-                body="Ademas de operar, gestiona usuarios, fees, app settings y PSAV desde las tabs dedicadas."
-              />
-            </div>
           </CardContent>
         </Card>
-
-        <RecentAuditCard logs={snapshot.auditLogs.slice(0, 8)} />
       </section>
 
       <Tabs defaultValue="overview" className="gap-4">
@@ -743,7 +712,7 @@ function PsavPanel({ actor, isPrivileged, onChangeRecord, records }: { actor: St
       </CardHeader>
       <CardContent className="p-0">
         {!isPrivileged ? <div className="p-6"><AdminOnlyNotice /></div> : null}
-        
+
         <Table>
           <TableHeader className="bg-muted/30">
             <TableRow className="hover:bg-transparent">
@@ -773,9 +742,9 @@ function PsavPanel({ actor, isPrivileged, onChangeRecord, records }: { actor: St
                     {record.qr_url ? (
                       <div className="relative size-10 overflow-hidden rounded-lg border border-border/80 bg-card p-1 transition-transform group-hover:scale-110 shadow-sm">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img 
-                          src={record.qr_url} 
-                          alt="QR" 
+                        <img
+                          src={record.qr_url}
+                          alt="QR"
                           className="size-full object-contain"
                         />
                       </div>
@@ -799,7 +768,7 @@ function PsavPanel({ actor, isPrivileged, onChangeRecord, records }: { actor: St
                     </span>
                   </TableCell>
                   <TableCell className="py-4">
-                    <Badge 
+                    <Badge
                       variant={record.is_active ? "default" : "outline"}
                       className={record.is_active ? "bg-emerald-400/15 text-emerald-200 hover:bg-emerald-400/20 border-emerald-400/20 shadow-none" : "text-muted-foreground border-border/60"}
                     >
