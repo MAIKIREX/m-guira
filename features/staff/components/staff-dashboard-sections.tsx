@@ -1072,7 +1072,7 @@ function ConfigPanel({
       <Card className="overflow-hidden border-border/60 bg-background/95 shadow-sm">
         <CardHeader className="border-b border-border/40 pb-6">
           <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400">
               <CircleDollarSign className="size-5" />
             </div>
             <div className="space-y-1">
@@ -1115,7 +1115,7 @@ function ConfigPanel({
                       </span>
                     </TableCell>
                     <TableCell className="py-4 pr-6 text-right">
-                      <div className="flex justify-end opacity-0 transition-opacity group-hover:opacity-100">
+                      <div className={tableActionClassName}>
                         {isPrivileged ? <FeeConfigDialog actor={actor} onUpdated={onUpdateFeeConfig} record={record} /> : null}
                       </div>
                     </TableCell>
@@ -1131,7 +1131,7 @@ function ConfigPanel({
         <Card className="overflow-hidden border-border/60 bg-background/95 shadow-sm">
           <CardHeader className="border-b border-border/40 pb-6">
             <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
                 <RefreshCw className="size-5" />
               </div>
               <div className="space-y-1">
@@ -1175,7 +1175,7 @@ function ConfigPanel({
         <Card className="overflow-hidden border-border/60 bg-background/95 shadow-sm">
           <CardHeader className="border-b border-border/40 pb-6">
             <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-300">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-cyan-400/10 text-sky-700 dark:text-cyan-300">
                 <ShieldCheck className="size-5" />
               </div>
               <div className="space-y-1">
@@ -1210,7 +1210,7 @@ function ConfigPanel({
                     return (
                       <TableRow key={String(record.id ?? key)} className={cn('group', interactiveCardClassName, 'hover:bg-muted/30')}>
                         <TableCell className="py-4 pl-6">
-                          <div className="font-mono text-[13px] font-bold tracking-tight text-cyan-300">{key}</div>
+                          <div className="font-mono text-[13px] font-bold tracking-tight text-sky-700 dark:text-cyan-300">{key}</div>
                         </TableCell>
                         <TableCell className="max-w-[200px] py-4">
                           <div className="truncate text-[12px] font-medium text-muted-foreground" title={value}>
@@ -1218,7 +1218,7 @@ function ConfigPanel({
                           </div>
                         </TableCell>
                         <TableCell className="py-4 pr-6 text-right">
-                          <div className="flex justify-end opacity-0 transition-opacity group-hover:opacity-100">
+                          <div className={tableActionClassName}>
                             {isPrivileged ? <AppSettingDialog actor={actor} onUpdated={onUpdateAppSetting} record={record} /> : null}
                           </div>
                         </TableCell>
@@ -1319,13 +1319,13 @@ function PsavPanel({
                   <TableCell className="py-4">
                     <Badge
                       variant={record.is_active ? 'default' : 'outline'}
-                      className={record.is_active ? 'border-emerald-400/20 bg-emerald-400/15 text-emerald-200 shadow-none hover:bg-emerald-400/20' : 'border-border/60 text-muted-foreground'}
+                      className={record.is_active ? 'border-emerald-400/20 bg-emerald-400/15 text-emerald-700 shadow-none hover:bg-emerald-400/20 dark:text-emerald-300' : 'border-border/60 text-muted-foreground'}
                     >
                       {record.is_active ? 'Activo' : 'Inactivo'}
                     </Badge>
                   </TableCell>
                   <TableCell className="py-4 pr-6 text-right">
-                    <div className="flex justify-end opacity-0 transition-opacity group-hover:opacity-100">
+                    <div className={tableActionClassName}>
                       <PsavConfigDialogs actor={actor} onUpdated={onChangeRecord} record={record} />
                     </div>
                   </TableCell>
@@ -1556,6 +1556,9 @@ function findAppSettingRecord(appSettings: AppSettingRow[], targetKey: string) {
     null
   )
 }
+
+const tableActionClassName =
+  'flex justify-end opacity-100 transition-opacity sm:opacity-65 group-hover:opacity-100 focus-within:opacity-100'
 
 function buildOptions<T>(items: T[], getValue: (item: T) => string | null | undefined) {
   return Array.from(

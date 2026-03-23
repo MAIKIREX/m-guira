@@ -113,7 +113,7 @@ export function OnboardingDetailPage({ onboardingId }: { onboardingId: string })
           <CardDescription>{error ?? 'No tienes permisos o el registro ya no existe.'}</CardDescription>
         </CardHeader>
         <CardContent>
-          <Link className="inline-flex items-center gap-2 text-sm font-medium hover:underline" href="/admin">
+          <Link className="inline-flex items-center gap-2 text-sm font-medium hover:underline" href="/admin/onboarding">
             <ArrowLeft className="size-4" />
             Volver a onboarding
           </Link>
@@ -153,7 +153,7 @@ function OnboardingDetailScene({
   return (
     <div className="space-y-6">
       <div className="space-y-3">
-        <Link className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground transition-colors hover:text-blue-700 dark:hover:text-cyan-300" href="/admin">
+        <Link className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground transition-colors hover:text-sky-700 dark:hover:text-cyan-300" href="/admin/onboarding">
           <ArrowLeft className="size-4" />
           Volver a onboarding
         </Link>
@@ -340,7 +340,7 @@ function DocumentPreview({ document }: { document: InlineDocument }) {
         )}
       </div>
       <a
-        className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-cyan-400/25 bg-cyan-400/10 px-3 text-sm font-medium text-cyan-100 transition-colors hover:bg-cyan-400/16"
+        className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-cyan-400/25 bg-cyan-400/10 px-3 text-sm font-medium text-sky-700 transition-colors hover:bg-cyan-400/16 dark:text-cyan-200"
         href={document.signed_url}
         rel="noreferrer"
         target="_blank"

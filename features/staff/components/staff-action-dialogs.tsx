@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { DocumentUploadCard } from '@/components/shared/document-upload-card'
 import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import {
   Dialog,
@@ -74,7 +75,7 @@ export function OnboardingDetailDialog({ actor, record, onUpdated }: { actor: St
               <div><span className="text-muted-foreground">Nombre:</span> {record.profiles?.full_name ?? 'Sin nombre'}</div>
               <div><span className="text-muted-foreground">Email:</span> {record.profiles?.email ?? 'Sin email'}</div>
               <div><span className="text-muted-foreground">Tipo:</span> <span className="uppercase">{record.type}</span></div>
-          <div><span className="text-muted-foreground">Estado Actual:</span> <span className={"font-semibold lowercase px-2 py-0.5 rounded-full " + (record.status === 'verified' ? 'bg-emerald-400/15 text-emerald-100' : record.status === 'rejected' ? 'bg-red-500/15 text-red-100' : 'bg-amber-400/15 text-amber-100')}>{record.status}</span></div>
+          <div><span className="text-muted-foreground">Estado Actual:</span> <span className={"font-semibold lowercase px-2 py-0.5 rounded-full " + (record.status === 'verified' ? 'bg-emerald-400/15 text-emerald-700 dark:text-emerald-300' : record.status === 'rejected' ? 'bg-red-500/15 text-red-700 dark:text-red-300' : 'bg-amber-400/15 text-amber-700 dark:text-amber-300')}>{record.status}</span></div>
             </div>
             
             <div className="mt-3">
@@ -180,12 +181,17 @@ export function SupportTicketActions({ actor, onUpdated, ticket }: { actor: Staf
               <FormItem>
                 <FormLabel>Nuevo estado</FormLabel>
                 <FormControl>
-                  <select className="flex h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm" value={field.value} onChange={(event) => field.onChange(event.target.value)}>
-                    <option value="open">open</option>
-                    <option value="in_progress">in_progress</option>
-                    <option value="resolved">resolved</option>
-                    <option value="closed">closed</option>
-                  </select>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Selecciona un estado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="open">open</SelectItem>
+                      <SelectItem value="in_progress">in_progress</SelectItem>
+                      <SelectItem value="resolved">resolved</SelectItem>
+                      <SelectItem value="closed">closed</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -235,10 +241,10 @@ export function OrderActions({ actor, onUpdated, order }: { actor: StaffActor; o
 }
 
 function getPaymentStatusColor(status: string) {
-  if (status === 'created' || status === 'waiting_deposit' || status === 'requires_quote_approval') return 'bg-amber-400/15 text-amber-100'
-  if (status === 'deposit_received' || status === 'processing' || status === 'sent') return 'bg-cyan-400/15 text-cyan-100'
-  if (status === 'completed') return 'bg-emerald-400/15 text-emerald-100'
-  return 'bg-red-500/15 text-red-100'
+  if (status === 'created' || status === 'waiting_deposit' || status === 'requires_quote_approval') return 'bg-amber-400/15 text-amber-700 dark:text-amber-300'
+  if (status === 'deposit_received' || status === 'processing' || status === 'sent') return 'bg-cyan-400/15 text-sky-700 dark:text-cyan-300'
+  if (status === 'completed') return 'bg-emerald-400/15 text-emerald-700 dark:text-emerald-300'
+  return 'bg-red-500/15 text-red-700 dark:text-red-300'
 }
 
 export function OrderDetailDialog({ actor, onUpdated, order }: { actor: StaffActor; onUpdated: (order: PaymentOrder) => Promise<void> | void; order: PaymentOrder }) {
@@ -272,7 +278,7 @@ export function OrderDetailDialog({ actor, onUpdated, order }: { actor: StaffAct
               {order.amount_converted > 0 && (
                 <div>
                   <span className="text-muted-foreground block text-xs">Monto Convertido</span>
-                  <span className="font-medium text-lg text-emerald-400">{order.amount_converted} {order.destination_currency}</span>
+                  <span className="font-medium text-lg text-emerald-700 dark:text-emerald-400">{order.amount_converted} {order.destination_currency}</span>
                 </div>
               )}
             </div>
@@ -300,21 +306,21 @@ export function OrderDetailDialog({ actor, onUpdated, order }: { actor: StaffAct
             <h4 className="font-semibold uppercase tracking-wider text-muted-foreground border-b pb-1 text-xs">Respaldo y comprobantes</h4>
             <div className="grid gap-2">
               {order.evidence_url ? (
-                <a href={order.evidence_url} target="_blank" rel="noreferrer" className="flex items-center text-cyan-300 hover:underline">
+                <a href={order.evidence_url} target="_blank" rel="noreferrer" className="flex items-center text-sky-700 underline-offset-4 hover:underline dark:text-cyan-300">
                   Ver Comprobante de Deposito (Cliente)
                 </a>
               ) : (
                 <span className="text-muted-foreground text-xs">Sin comprobante de deposito.</span>
               )}
               {order.support_document_url ? (
-                <a href={order.support_document_url} target="_blank" rel="noreferrer" className="flex items-center text-cyan-300 hover:underline">
+                <a href={order.support_document_url} target="_blank" rel="noreferrer" className="flex items-center text-sky-700 underline-offset-4 hover:underline dark:text-cyan-300">
                   Ver Documento de Respaldo
                 </a>
               ) : (
                 <span className="text-muted-foreground text-xs">Sin respaldo documental.</span>
               )}
               {order.staff_comprobante_url ? (
-                <a href={order.staff_comprobante_url} target="_blank" rel="noreferrer" className="flex items-center text-emerald-400 hover:underline">
+                <a href={order.staff_comprobante_url} target="_blank" rel="noreferrer" className="flex items-center text-emerald-700 underline-offset-4 hover:underline dark:text-emerald-400">
                   Comprobante Final (Staff)
                 </a>
               ) : null}

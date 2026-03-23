@@ -168,7 +168,7 @@ export function UserDetailDialog({ actor, onUpdated, user }: { actor: StaffActor
             <div><span className="text-muted-foreground block text-xs">Nombre:</span> <span className="font-medium">{user.full_name || 'Sin nombre'}</span></div>
             <div><span className="text-muted-foreground block text-xs">Email:</span> <span className="font-medium">{user.email}</span></div>
             <div><span className="text-muted-foreground block text-xs">Rol:</span> <Badge variant="outline">{user.role}</Badge></div>
-            <div><span className="text-muted-foreground block text-xs">Archivado:</span> <span className={"font-semibold " + (user.is_archived ? "text-amber-300" : "text-emerald-400")}>{user.is_archived ? 'Sí' : 'No'}</span></div>
+            <div><span className="text-muted-foreground block text-xs">Archivado:</span> <span className={"font-semibold " + (user.is_archived ? "text-amber-700 dark:text-amber-300" : "text-emerald-700 dark:text-emerald-400")}>{user.is_archived ? 'Sí' : 'No'}</span></div>
           </div>
           
           <div className="text-xs text-muted-foreground mt-4">
@@ -359,18 +359,18 @@ export function FeeConfigDialog({ actor, onUpdated, record }: { actor: StaffActo
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="sm" variant="ghost" className="h-8 px-2 hover:bg-amber-500/10 hover:text-amber-600 font-bold text-[10px] uppercase tracking-wider transition-all" />}>
+      <DialogTrigger render={<Button size="sm" variant="ghost" className="h-8 px-2 border border-transparent bg-amber-500/8 text-amber-700 hover:bg-amber-500/14 hover:text-amber-800 dark:text-amber-300 dark:hover:text-amber-200 font-bold text-[10px] uppercase tracking-wider transition-all" />}>
         Editar
       </DialogTrigger>
       <DialogContent className="sm:max-w-[450px] gap-0 p-0 overflow-hidden border-border/40 shadow-2xl">
         <div className="bg-amber-500/5 border-b border-amber-500/10 p-6 flex items-center gap-4">
-          <div className="size-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-600 shadow-sm">
+          <div className="size-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-700 shadow-sm dark:text-amber-300">
             <CircleDollarSign className="size-6" />
           </div>
           <div className="space-y-0.5">
             <DialogTitle className="text-lg font-bold">Ajustar Comisión</DialogTitle>
-            <DialogDescription className="text-xs text-amber-600/70 font-medium">
-              Modificando: <span className="text-amber-700 font-bold">{record.type}</span>
+            <DialogDescription className="text-xs text-amber-700/80 font-medium dark:text-amber-300/80">
+              Modificando: <span className="text-amber-800 font-bold dark:text-amber-200">{record.type}</span>
             </DialogDescription>
           </div>
         </div>
@@ -453,22 +453,22 @@ export function AppSettingDialog({ actor, onUpdated, record }: { actor: StaffAct
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="sm" variant="ghost" className="h-8 px-2 hover:bg-cyan-400/10 hover:text-cyan-300 font-bold text-[10px] uppercase tracking-wider transition-all" />}>
+      <DialogTrigger render={<Button size="sm" variant="ghost" className="h-8 px-2 border border-transparent bg-cyan-500/8 text-sky-700 hover:bg-cyan-500/14 hover:text-sky-800 dark:text-cyan-300 dark:hover:text-cyan-200 font-bold text-[10px] uppercase tracking-wider transition-all" />}>
         Configurar
       </DialogTrigger>
       <DialogContent className="sm:max-w-[550px] gap-0 p-0 overflow-hidden border-border/40 shadow-2xl">
         <div className="bg-cyan-400/5 border-b border-cyan-400/10 p-6 flex items-center gap-4">
-          <div className="size-12 rounded-2xl bg-cyan-400/10 flex items-center justify-center text-cyan-300 shadow-sm">
+          <div className="size-12 rounded-2xl bg-cyan-400/10 flex items-center justify-center text-sky-700 shadow-sm dark:text-cyan-300">
             <ShieldCheck className="size-6" />
           </div>
           <div className="space-y-0.5">
             <DialogTitle className="text-lg font-bold">Variable de Entorno</DialogTitle>
-            <DialogDescription className="text-xs text-cyan-300/70 font-mono font-bold uppercase">
+            <DialogDescription className="text-xs text-sky-700/80 font-mono font-bold uppercase dark:text-cyan-300/80">
               {String(record.key ?? record.name ?? 'CONFIG_VAR')}
             </DialogDescription>
           </div>
           <div className="ml-auto">
-            <Badge variant="outline" className="bg-cyan-400/5 text-[10px] border-cyan-400/20 text-cyan-300 font-bold uppercase tracking-tighter px-2 py-0">
+            <Badge variant="outline" className="bg-cyan-400/5 text-[10px] border-cyan-400/20 text-sky-700 font-bold uppercase tracking-tighter px-2 py-0 dark:text-cyan-300">
               Type: {valueKind}
             </Badge>
           </div>
@@ -494,7 +494,7 @@ export function AppSettingDialog({ actor, onUpdated, record }: { actor: StaffAct
                   </FormControl>
                   <div className="bg-muted/30 rounded-lg p-3 border border-border/40">
                     <p className="text-[11px] text-muted-foreground leading-relaxed flex items-center gap-2">
-                      <Bell className="size-3 text-cyan-300/60" />
+                      <Bell className="size-3 text-sky-600/70 dark:text-cyan-300/60" />
                       <span>{getAppSettingHelpText(valueKind)}</span>
                     </p>
                   </div>
@@ -734,7 +734,7 @@ function PsavUpsertDialog({ actor, label, onUpdated, record }: { actor: StaffAct
 
             <div className="flex-1" />
             
-            <div className="w-full p-3 rounded-xl bg-amber-400/5 border border-amber-400/10 text-[11px] text-amber-200/80 italic leading-relaxed text-center">
+            <div className="w-full p-3 rounded-xl bg-amber-400/8 border border-amber-400/15 text-[11px] text-amber-800/80 italic leading-relaxed text-center dark:text-amber-200/80">
               Asegúrate de que el QR sea legible y los datos bancarios exactos.
             </div>
           </div>
