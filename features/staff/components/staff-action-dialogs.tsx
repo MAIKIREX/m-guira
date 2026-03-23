@@ -1,9 +1,20 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { format } from 'date-fns'
 import { useForm, useWatch, type Control, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
+import {
+  ArrowRight,
+  Banknote,
+  Eye,
+  FileCheck2,
+  FileText,
+  Landmark,
+  ReceiptText,
+  Wallet,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -67,7 +78,7 @@ export function OnboardingDetailDialog({ actor, record, onUpdated }: { actor: St
           <DialogTitle>Detalle de Onboarding</DialogTitle>
           <DialogDescription>Revisión multinivel de datos y documentos (KYC/KYB).</DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-6 pt-4">
           <div className="space-y-3">
             <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground border-b pb-1">Nivel 1: Datos Generales</h4>
@@ -75,15 +86,15 @@ export function OnboardingDetailDialog({ actor, record, onUpdated }: { actor: St
               <div><span className="text-muted-foreground">Nombre:</span> {record.profiles?.full_name ?? 'Sin nombre'}</div>
               <div><span className="text-muted-foreground">Email:</span> {record.profiles?.email ?? 'Sin email'}</div>
               <div><span className="text-muted-foreground">Tipo:</span> <span className="uppercase">{record.type}</span></div>
-          <div><span className="text-muted-foreground">Estado Actual:</span> <span className={"font-semibold lowercase px-2 py-0.5 rounded-full " + (record.status === 'verified' ? 'bg-emerald-400/15 text-emerald-700 dark:text-emerald-300' : record.status === 'rejected' ? 'bg-red-500/15 text-red-700 dark:text-red-300' : 'bg-amber-400/15 text-amber-700 dark:text-amber-300')}>{record.status}</span></div>
+              <div><span className="text-muted-foreground">Estado Actual:</span> <span className={"font-semibold lowercase px-2 py-0.5 rounded-full " + (record.status === 'verified' ? 'bg-emerald-400/15 text-emerald-700 dark:text-emerald-300' : record.status === 'rejected' ? 'bg-red-500/15 text-red-700 dark:text-red-300' : 'bg-amber-400/15 text-amber-700 dark:text-amber-300')}>{record.status}</span></div>
             </div>
-            
+
             <div className="mt-3">
               <span className="text-muted-foreground text-sm">Objeto Data:</span>
               <pre className="mt-1 p-3 bg-muted/30 rounded-lg overflow-x-auto text-xs">{JSON.stringify(record.data, null, 2)}</pre>
             </div>
           </div>
-          
+
           <div className="space-y-3">
             <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground border-b pb-1">Nivel 2: Verificación Documental</h4>
             <p className="text-xs text-muted-foreground">Los documentos se cargan en el bucket `onboarding`. Puedes previsualizarlos o descargarlos accediendo a la URL pública/firmada de cada path almacenado aquí.</p>
@@ -221,7 +232,7 @@ export function OrderActions({ actor, onUpdated, order }: { actor: StaffActor; o
   if (actions.size === 0) return null
 
   return (
-    <div className="flex flex-wrap justify-end gap-2">
+    <div className="flex flex-wrap gap-3 xl:justify-end">
       {actions.has('deposit_received') ? (
         <OrderReasonActionDialog
           actor={actor}
@@ -250,90 +261,248 @@ function getPaymentStatusColor(status: string) {
 export function OrderDetailDialog({ actor, onUpdated, order }: { actor: StaffActor; onUpdated: (order: PaymentOrder) => Promise<void> | void; order: PaymentOrder }) {
   const meta = order.metadata as import('@/types/payment-order').PaymentOrderMetadata | undefined
   const destinationInfo = buildOrderDestinationInfo(meta)
+  const summaryCards = buildOrderSummaryCards(order)
+  const documentItems = buildOrderDocumentItems(order)
+  const stepExpectation = getOrderStepExpectation(order)
 
   return (
     <Dialog>
       <DialogTrigger render={<Button size="sm" variant="secondary" />}>Gestionar Orden</DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader className="mb-2">
-          <div className="flex items-center justify-between">
-            <DialogTitle>Gestion de Orden #{order.id.slice(0, 8)}</DialogTitle>
-            <span className={"text-xs px-3 py-1 font-semibold uppercase rounded " + getPaymentStatusColor(order.status)}>
-              {order.status}
-            </span>
+      <DialogContent className="max-h-[92vh] w-[calc(100vw-1rem)] max-w-none overflow-x-hidden overflow-y-auto border border-border/70 bg-background/95 p-0 shadow-2xl sm:max-w-none sm:w-[min(95vw,1100px)] lg:w-[min(92vw,1240px)] supports-backdrop-filter:backdrop-blur-md">
+        <DialogHeader className="gap-4 border-b border-border/70 bg-gradient-to-r from-primary/[0.11] via-background to-accent/[0.08] px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+          <div className="flex min-w-0 flex-col gap-4 2xl:flex-row 2xl:items-start 2xl:justify-between">
+            <div className="flex min-w-0 items-start gap-4">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/12 text-primary shadow-sm">
+                <ReceiptText className="size-5" />
+              </div>
+              <div className="min-w-0 space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <DialogTitle className="text-xl font-semibold tracking-tight sm:text-2xl">
+                    Gestion de Orden #{order.id.slice(0, 8)}
+                  </DialogTitle>
+                  <span className={"rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] " + getPaymentStatusColor(order.status)}>
+                    {humanizeOrderStatus(order.status)}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted-foreground">
+                  <span>Creada: {formatOrderDate(order.created_at)}</span>
+                  <span>Actualizada: {formatOrderDate(order.updated_at)}</span>
+                  <span>Rail: {order.processing_rail}</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <DialogDescription>Controla el ciclo de vida del expediente y valida respaldo, comprobante del cliente y avance operativo.</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 pt-2 text-sm">
-          <div className="space-y-3">
-            <h4 className="font-semibold uppercase tracking-wider text-muted-foreground border-b pb-1 text-xs">Detalle Transaccional</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div><span className="text-muted-foreground block text-xs">Tipo de Orden</span> <span className="font-medium">{order.order_type}</span></div>
-              <div><span className="text-muted-foreground block text-xs">Riel de Proc.</span> <span className="font-medium">{order.processing_rail}</span></div>
-              <div>
-                <span className="text-muted-foreground block text-xs">Monto Origen</span>
-                <span className="font-medium text-lg">{order.amount_origin} {order.origin_currency}</span>
-              </div>
-              {order.amount_converted > 0 && (
-                <div>
-                  <span className="text-muted-foreground block text-xs">Monto Convertido</span>
-                  <span className="font-medium text-lg text-emerald-700 dark:text-emerald-400">{order.amount_converted} {order.destination_currency}</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <h4 className="font-semibold uppercase tracking-wider text-muted-foreground border-b pb-1 text-xs">Informacion de Destino</h4>
-            {destinationInfo.length > 0 ? (
-              <div className="grid gap-3 md:grid-cols-2">
-                {destinationInfo.map((item) => (
-                  <div key={item.label} className="rounded-xl border border-border/60 bg-muted/20 px-3 py-3">
-                    <span className="text-muted-foreground block text-xs">{item.label}</span>
-                    <span className="mt-1 block font-medium break-words">{item.value}</span>
-                  </div>
+        <div className="grid gap-6 px-4 py-5 sm:px-6 sm:py-6 lg:px-8 2xl:grid-cols-[minmax(0,1.45fr)_minmax(300px,360px)]">
+          <div className="min-w-0 space-y-6">
+            <section className="space-y-4">
+              <SectionHeading
+                eyebrow="Detalle transaccional"
+                title="Estado operativo de la orden"
+                description="La informacion mostrada aqui sale de la orden actual y se mantiene sincronizada con las mismas transiciones ya definidas."
+              />
+              <div className="grid min-w-0 gap-3 md:grid-cols-2 2xl:grid-cols-3">
+                {summaryCards.map((card) => (
+                  <SummaryMetricCard
+                    key={card.label}
+                    accent={card.accent}
+                    icon={card.icon}
+                    label={card.label}
+                    value={card.value}
+                  />
                 ))}
               </div>
-            ) : (
-              <div className="rounded-xl border border-dashed border-border/60 bg-muted/10 px-3 py-3 text-xs text-muted-foreground">
-                Esta orden todavia no tiene informacion de destino registrada en metadata.
+            </section>
+
+            <section className="space-y-4">
+              <SectionHeading
+                eyebrow="Destino"
+                title="Informacion de entrega"
+                description="Solo se muestran los campos de destino que esta orden ya tiene cargados en metadata."
+              />
+              {destinationInfo.length > 0 ? (
+                <div className="overflow-hidden rounded-[28px] border border-border/70 bg-card/80 shadow-sm">
+                  {destinationInfo.map((item) => (
+                    <div
+                      key={item.label}
+                      className="flex flex-col gap-2 border-b border-border/60 px-4 py-4 last:border-b-0 sm:flex-row sm:items-start sm:justify-between sm:gap-6"
+                    >
+                      <span className="block shrink-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:w-48">
+                        {item.label}
+                      </span>
+                      <span className="block break-words text-sm font-medium leading-6 text-foreground sm:text-right">
+                        {item.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyPanel message="Esta orden todavia no tiene informacion de destino registrada en metadata." />
+              )}
+            </section>
+
+          </div>
+
+          <aside className="min-w-0 space-y-4">
+            <section className="rounded-[28px] border border-border/70 bg-card/80 p-4 shadow-sm">
+              <SectionHeading
+                eyebrow="Documentos"
+                title="Respaldo y comprobantes"
+              />
+              <div className="mt-4 space-y-3">
+                {documentItems.map((item) => (
+                  <DocumentStatusCard
+                    key={item.label}
+                    emptyMessage={item.emptyMessage}
+                    href={item.href}
+                    label={item.label}
+                    tone={item.tone}
+                  />
+                ))}
               </div>
-            )}
-          </div>
+            </section>
 
-          <div className="space-y-3">
-            <h4 className="font-semibold uppercase tracking-wider text-muted-foreground border-b pb-1 text-xs">Respaldo y comprobantes</h4>
-            <div className="grid gap-2">
-              {order.evidence_url ? (
-                <a href={order.evidence_url} target="_blank" rel="noreferrer" className="flex items-center text-sky-700 underline-offset-4 hover:underline dark:text-cyan-300">
-                  Ver Comprobante de Deposito (Cliente)
-                </a>
-              ) : (
-                <span className="text-muted-foreground text-xs">Sin comprobante de deposito.</span>
-              )}
-              {order.support_document_url ? (
-                <a href={order.support_document_url} target="_blank" rel="noreferrer" className="flex items-center text-sky-700 underline-offset-4 hover:underline dark:text-cyan-300">
-                  Ver Documento de Respaldo
-                </a>
-              ) : (
-                <span className="text-muted-foreground text-xs">Sin respaldo documental.</span>
-              )}
-              {order.staff_comprobante_url ? (
-                <a href={order.staff_comprobante_url} target="_blank" rel="noreferrer" className="flex items-center text-emerald-700 underline-offset-4 hover:underline dark:text-emerald-400">
-                  Comprobante Final (Staff)
-                </a>
-              ) : null}
-            </div>
-          </div>
+            <section className="rounded-[28px] border border-border/70 bg-card/80 p-4 shadow-sm">
+              <SectionHeading
+                eyebrow="Paso actual"
+                title="Que se espera realizar"
+              />
+              <div className="mt-4 rounded-2xl border border-primary/15 bg-primary/[0.05] px-4 py-4">
+                <div className="text-sm font-medium text-foreground">
+                  {stepExpectation.title}
+                </div>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  {stepExpectation.description}
+                </p>
+              </div>
+            </section>
+
+            <section className="rounded-[28px] border border-border/70 bg-card/80 p-4 shadow-sm">
+              <SectionHeading eyebrow="Acciones" title="Gestion operativa" />
+              <div className="mt-4">
+                <div className="flex flex-col gap-3">
+                  <OrderActions actor={actor} onUpdated={onUpdated} order={order} />
+                </div>
+              </div>
+            </section>
+          </aside>
         </div>
-
-        <DialogFooter className="mt-6 border-t pt-4 sm:justify-between items-center">
-          <span className="text-xs text-muted-foreground">Acciones Habilitadas:</span>
-          <OrderActions actor={actor} onUpdated={onUpdated} order={order} />
-        </DialogFooter>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function SectionHeading({
+  description,
+  eyebrow,
+  title,
+}: {
+  description?: string
+  eyebrow: string
+  title: string
+}) {
+  return (
+    <div className="space-y-1.5">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+        {eyebrow}
+      </div>
+      <h3 className="text-lg font-semibold tracking-tight text-foreground">{title}</h3>
+      {description ? <p className="text-sm leading-6 text-muted-foreground">{description}</p> : null}
+    </div>
+  )
+}
+
+function SummaryMetricCard({
+  accent,
+  icon: Icon,
+  label,
+  value,
+}: {
+  accent: 'primary' | 'success' | 'warning'
+  icon: typeof ReceiptText
+  label: string
+  value: string
+}) {
+  const accentClassName =
+    accent === 'success'
+      ? 'border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-700 dark:text-emerald-300'
+      : accent === 'warning'
+        ? 'border-amber-500/20 bg-amber-500/[0.06] text-amber-700 dark:text-amber-300'
+        : 'border-primary/20 bg-primary/[0.06] text-primary'
+
+  return (
+    <div className="min-w-0 rounded-[24px] border border-border/70 bg-card/80 p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-2">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            {label}
+          </div>
+          <div className="break-words text-base font-semibold tracking-tight text-foreground sm:text-lg">{value}</div>
+        </div>
+        <div className={'flex size-10 shrink-0 items-center justify-center rounded-2xl border ' + accentClassName}>
+          <Icon className="size-4" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function DocumentStatusCard({
+  emptyMessage,
+  href,
+  label,
+  tone,
+}: {
+  emptyMessage: string
+  href?: string
+  label: string
+  tone: 'default' | 'success'
+}) {
+  const toneClassName =
+    tone === 'success'
+      ? 'border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-700 dark:text-emerald-300'
+      : 'border-border/70 bg-background/80 text-primary'
+
+  return (
+    <div className="min-w-0 rounded-2xl border border-border/70 bg-background/65 p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-background hover:shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex items-start gap-3">
+          <div className={'mt-0.5 flex size-9 items-center justify-center rounded-xl border ' + toneClassName}>
+            {href ? <FileCheck2 className="size-4" /> : <FileText className="size-4" />}
+          </div>
+          <div className="min-w-0">
+            <div className="break-words text-sm font-medium text-foreground">{label}</div>
+          </div>
+        </div>
+        {href ? (
+          <a
+            aria-label={`Ver ${label}`}
+            className="inline-flex size-9 items-center justify-center rounded-full border border-border/70 bg-background text-primary transition-colors hover:bg-muted"
+            href={href}
+            rel="noreferrer"
+            target="_blank"
+          >
+            <Eye className="size-4" />
+          </a>
+        ) : (
+          <span
+            aria-label={emptyMessage}
+            className="inline-flex size-9 items-center justify-center rounded-full border border-dashed border-border/70 bg-muted/20 text-muted-foreground"
+          >
+            <Eye className="size-4" />
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function EmptyPanel({ message }: { message: string }) {
+  return (
+    <div className="rounded-[24px] border border-dashed border-border/70 bg-muted/10 px-4 py-5 text-sm leading-6 text-muted-foreground">
+      {message}
+    </div>
   )
 }
 
@@ -448,6 +617,156 @@ function humanizeInstructionSource(source?: import('@/types/payment-order').Paym
       return ''
   }
 }
+
+function buildOrderSummaryCards(order: PaymentOrder) {
+  const cards: Array<{
+    accent: 'primary' | 'success' | 'warning'
+    icon: typeof ReceiptText
+    label: string
+    value: string
+  }> = [
+      {
+        label: 'Monto origen',
+        value: `${formatNumericValue(order.amount_origin)} ${order.origin_currency}`,
+        icon: Banknote,
+        accent: 'warning',
+      },
+      {
+        label: 'Tipo de orden',
+        value: order.order_type,
+        icon: ReceiptText,
+        accent: 'primary',
+      },
+      {
+        label: 'Rail operativo',
+        value: order.processing_rail,
+        icon: Landmark,
+        accent: 'primary',
+      },
+      {
+        label: 'Tipo de cambio',
+        value: formatNumericValue(order.exchange_rate_applied),
+        icon: ArrowRight,
+        accent: 'primary',
+      },
+      {
+        label: 'Fee total',
+        value: `${formatNumericValue(order.fee_total)} ${order.origin_currency}`,
+        icon: Wallet,
+        accent: 'warning',
+      },
+    ]
+
+  if (order.amount_converted > 0) {
+    cards.splice(3, 0, {
+      label: 'Monto convertido',
+      value: `${formatNumericValue(order.amount_converted)} ${order.destination_currency}`,
+      icon: ReceiptText,
+      accent: 'success',
+    })
+  }
+
+  return cards
+}
+
+function buildOrderDocumentItems(order: PaymentOrder) {
+  return [
+    {
+      label: 'Comprobante de deposito',
+      href: order.evidence_url,
+      emptyMessage: 'El cliente aun no subio comprobante de deposito.',
+      tone: 'default' as const,
+    },
+    {
+      label: 'Documento de respaldo',
+      href: order.support_document_url,
+      emptyMessage: 'No existe respaldo documental adjunto.',
+      tone: 'default' as const,
+    },
+    {
+      label: 'Comprobante final staff',
+      href: order.staff_comprobante_url,
+      emptyMessage: 'Todavia no se genero comprobante final del staff.',
+      tone: 'success' as const,
+    },
+  ]
+}
+
+function getOrderStepExpectation(order: PaymentOrder) {
+  switch (order.status) {
+    case 'created':
+    case 'waiting_deposit':
+      return {
+        title: 'Validar el deposito del cliente o detener la orden.',
+        description:
+          'En este punto se espera revisar si ya existe comprobante de deposito del cliente. Si el respaldo es correcto, procede con la validacion; si la operacion no puede continuar, marca la orden como failed.',
+      }
+    case 'deposit_received':
+      return {
+        title: 'Preparar y publicar la cotizacion final.',
+        description:
+          'Aqui se espera definir la tasa real, la fee total y confirmar el monto convertido final antes de mover la orden a processing.',
+      }
+    case 'processing':
+      return {
+        title: 'Registrar la salida de la operacion.',
+        description:
+          'Cuando la transferencia o envio ya fue ejecutado, registra la referencia correspondiente para mover la orden a sent.',
+      }
+    case 'sent':
+      return {
+        title: 'Cerrar el expediente con el comprobante final.',
+        description:
+          'En esta etapa se espera adjuntar el comprobante final generado por staff para completar la orden y cerrar el proceso.',
+      }
+    case 'completed':
+      return {
+        title: 'La orden ya fue completada.',
+        description:
+          'No se esperan nuevas acciones operativas sobre esta orden desde este modal. Solo queda disponible la consulta de la informacion registrada.',
+      }
+    case 'failed':
+      return {
+        title: 'La orden fue detenida.',
+        description:
+          'Esta orden ya esta marcada como failed. La seccion se mantiene como referencia para entender en que punto quedo el expediente y consultar sus respaldos.',
+      }
+  }
+}
+
+function humanizeOrderStatus(status: PaymentOrder['status']) {
+  switch (status) {
+    case 'created':
+      return 'Creada'
+    case 'waiting_deposit':
+      return 'Esperando deposito'
+    case 'deposit_received':
+      return 'Deposito validado'
+    case 'processing':
+      return 'Processing'
+    case 'sent':
+      return 'Sent'
+    case 'completed':
+      return 'Completada'
+    case 'failed':
+      return 'Failed'
+  }
+}
+
+function formatOrderDate(value?: string) {
+  if (!value) return 'Sin fecha'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return format(date, 'dd/MM/yyyy HH:mm')
+}
+
+function formatNumericValue(value: unknown) {
+  const normalized = normalizeNumericValue(value)
+  return normalized.toLocaleString('en-US', {
+    minimumFractionDigits: normalized % 1 === 0 ? 0 : 2,
+    maximumFractionDigits: 2,
+  })
+}
 function OrderReasonActionDialog({ actor, action, blockedReason, label, onUpdated, order }: { actor: StaffActor; action: 'deposit_received' | 'failed'; blockedReason?: string | null; label: string; onUpdated: (order: PaymentOrder) => Promise<void> | void; order: PaymentOrder }) {
   const [open, setOpen] = useState(false)
   const form = useForm<{ reason: string }>({ resolver: zodResolver(staffReasonSchema), defaultValues: { reason: '' } })
@@ -475,7 +794,7 @@ function OrderReasonActionDialog({ actor, action, blockedReason, label, onUpdate
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button disabled={Boolean(blockedReason)} size="sm" variant="outline" />}>{label}</DialogTrigger>
+      <DialogTrigger render={<Button className="min-h-12 w-full justify-center px-4 text-sm font-semibold sm:w-auto" disabled={Boolean(blockedReason)} variant="outline" />}>{label}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{label}</DialogTitle>
@@ -533,7 +852,7 @@ function OrderQuoteDialog({ actor, onUpdated, order }: { actor: StaffActor; onUp
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="sm" variant="outline" />}>Preparar cotizacion</DialogTrigger>
+      <DialogTrigger render={<Button className="min-h-12 w-full justify-center px-4 text-sm font-semibold sm:w-auto" variant="outline" />}>Preparar cotizacion</DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Publicar cotizacion final</DialogTitle>
@@ -582,7 +901,7 @@ function OrderSentDialog({ actor, onUpdated, order }: { actor: StaffActor; onUpd
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="sm" variant="outline" />}>Registrar sent</DialogTrigger>
+      <DialogTrigger render={<Button className="min-h-12 w-full justify-center px-4 text-sm font-semibold sm:w-auto" variant="outline" />}>Registrar sent</DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Registrar referencia</DialogTitle>
@@ -637,7 +956,7 @@ function OrderCompletionDialog({ actor, onUpdated, order }: { actor: StaffActor;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="sm" variant="outline" />}>Completar orden</DialogTrigger>
+      <DialogTrigger render={<Button className="min-h-12 w-full justify-center px-4 text-sm font-semibold sm:w-auto" variant="outline" />}>Completar orden</DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Completar orden</DialogTitle>
