@@ -691,14 +691,11 @@ function ActionDesk({
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <div className="space-y-1">
-          <div className='flex items-center gap-2 justify-between'>
-            <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Mesa de accion</div>
-            <Badge className={getUrgencyBadgeClass(order.status)} variant="outline">
-              {getUrgencyLabel(order.status)}
-            </Badge>
-          </div>
-          <div className="text-sm text-foreground">{getNextActionMessage(order)}</div>
+        <div className="flex w-full items-center justify-between gap-2">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Mesa de accion</div>
+          <Badge className={getUrgencyBadgeClass(order.status)} variant="outline">
+            {getUrgencyLabel(order.status)}
+          </Badge>
         </div>
       </div>
 
@@ -823,9 +820,9 @@ function InfoBlock({ label, value, highlight, subtitle }: { label: string; value
 function ComplianceNote({ order, quotePreparedAt }: { order: PaymentOrder; quotePreparedAt: string | null }) {
   return (
     <div className="rounded-[24px] border border-border/70 bg-muted/[0.14] p-5">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Nota operativa</div>
+      <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Estado y proximos pasos</div>
       <div className="mt-3 max-w-3xl border-l-2 border-cyan-500/35 pl-4 text-sm leading-7 text-muted-foreground">
-        {getComplianceNote(order, quotePreparedAt)}
+        {getConsolidatedStatusMessage(order, quotePreparedAt)}
       </div>
     </div>
   )
@@ -880,51 +877,26 @@ function getMetadataDate(metadata: PaymentOrder['metadata'], key: 'quote_prepare
   return typeof value === 'string' && value ? value : null
 }
 
-function getNextActionMessage(order: PaymentOrder) {
+function getConsolidatedStatusMessage(order: PaymentOrder, quotePreparedAt: string | null) {
   switch (order.status) {
     case 'created':
       return isDepositOrder(order)
-        ? order.order_type === 'WORLD_TO_BO'
-          ? 'El expediente ya fue creado. Puedes dejar un respaldo documental y luego adjuntar el comprobante del deposito para mover la orden a waiting_deposit.'
-          : 'El expediente ya fue creado. Falta adjuntar el comprobante del fondeo para mover la orden a waiting_deposit.'
-        : 'Sube respaldo y evidencia para mover la orden a waiting_deposit.'
+        ? 'Expediente aperturado y a la espera de fondeo. Por favor, realiza el deposito usando las instrucciones proporcionadas y sube tu comprobante en la mesa de accion para que staff pueda validarlo.'
+        : 'Expediente aperturado. Para liberar la siguiente etapa del flujo y continuar con la orden, debes subir el respaldo documental y evidencia operativa en la mesa de accion.'
     case 'waiting_deposit':
-      return isDepositOrder(order)
-        ? 'Tu comprobante ya fue cargado. Staff debe validar el deposito para continuar con la conciliacion y la cotizacion final.'
-        : 'Staff debe validar el deposito para liberar la cotizacion final.'
-    case 'deposit_received':
-      return 'Staff esta preparando la cotizacion final con fee y tipo de cambio reales.'
-    case 'processing':
-      return 'La orden ya esta autorizada y Guira esta coordinando la ejecucion sobre el riel externo.'
-    case 'sent':
-      return 'El riel externo ya genero referencia. Falta el comprobante final para cerrar el expediente.'
-    case 'completed':
-      return 'Operacion cerrada. Puedes descargar el PDF y revisar el comprobante final.'
-    case 'failed':
-      return 'La orden fue cerrada como fallida. Revisa la razon registrada en metadata o auditoria.'
-  }
-}
-
-function getComplianceNote(order: PaymentOrder, quotePreparedAt: string | null) {
-  switch (order.status) {
-    case 'created':
-      return isDepositOrder(order)
-        ? 'Expediente aperturado y a la espera de fondeo. La orden ya tiene trazabilidad activa y el siguiente hito es subir el comprobante para que staff pueda validar el deposito.'
-        : 'Expediente aperturado. Antes de avanzar, se requiere respaldo documental y evidencia operativa para liberar la siguiente etapa del flujo.'
-    case 'waiting_deposit':
-      return 'La evidencia ya fue reportada por el cliente. El expediente permanece en espera hasta que mesa valide el deposito y confirme la conciliacion correspondiente.'
+      return 'La evidencia ya fue reportada y el expediente permanece en espera. Nuestro equipo debe validar el deposito para confirmar la conciliacion y publicar la cotizacion final.'
     case 'deposit_received':
       return quotePreparedAt
         ? 'El deposito fue validado y la cotizacion final ya esta preparada. La orden queda alineada para pasar a ejecucion sobre el rail seleccionado.'
-        : 'El deposito ya fue validado por staff. La orden queda en control interno mientras se publica la cotizacion final con fee y tipo de cambio reales.'
+        : 'El deposito ya fue validado por staff. La orden queda en control interno preparandose la cotizacion final con fee y tipo de cambio reales.'
     case 'processing':
-      return 'La orden ya se encuentra en ejecucion. La trazabilidad documental queda congelada y cualquier nuevo evento deberia reflejarse en la bitacora operativa.'
+      return 'La orden ya esta autorizada y en ejecucion sobre el riel externo. La trazabilidad documental queda congelada y cualquier nuevo evento se reflejara en la bitacora operativa.'
     case 'sent':
-      return 'El rail externo ya emitio salida o referencia operativa. Se mantiene la trazabilidad activa hasta contar con comprobante final y cierre del expediente.'
+      return 'El rail externo ya emitio salida o referencia operativa. Se mantiene la trazabilidad activa a la espera del comprobante final para proceder con el cierre del expediente.'
     case 'completed':
-      return 'Operacion cerrada correctamente. El expediente conserva historial, cotizacion final y archivos como respaldo operativo del cierre.'
+      return 'Operacion cerrada correctamente. Puedes descargar el PDF, revisar el comprobante final y consultar el historial como respaldo operativo del cierre.'
     case 'failed':
-      return 'El expediente fue marcado como fallido. Debe revisarse la razon registrada en metadata o auditoria antes de reintentar una nueva operacion.'
+      return 'El expediente fue marcado como fallido y la orden ha sido cerrada. Revisa la razon registrada en la metadata o en la bitacora de actividad.'
   }
 }
 
