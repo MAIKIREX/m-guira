@@ -508,15 +508,15 @@ export function CreatePaymentOrderForm({
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
       <Card className="ring-0 shadow-none bg-background">
-        <CardHeader className="border-b border-border/60 bg-transparent">
-          <CardTitle className="text-2xl font-semibold tracking-[-0.03em]">
+        <CardHeader className="border-b border-border/60 bg-transparent px-4 py-5 sm:px-6">
+          <CardTitle className="text-xl sm:text-2xl font-semibold tracking-[-0.03em]">
             {isDepositRouteActive ? 'Depositar por expediente' : 'Enviar por expediente'}
           </CardTitle>
-          <CardDescription className="text-sm leading-6 tracking-[0.01em]">
-            El flujo ahora separa ruta, metodo, detalle, revision y finalizacion para que cada etapa muestre solo lo necesario.
+          <CardDescription className="text-xs sm:text-sm leading-relaxed sm:leading-6 tracking-[0.01em]">
+            El flujo separa ruta, metodo, detalle, revision y finalizacion para una mejor experiencia.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-8 px-4 py-6 sm:px-6 lg:px-8">
+        <CardContent className="space-y-6 sm:space-y-8 px-4 py-6 sm:px-6 lg:px-8">
           <StepProgressRail currentStep={step} getStepLabel={getStepLabel} steps={STEP_ORDER} />
 
           <Form {...form}>
@@ -1169,14 +1169,14 @@ function DocumentInputCard({
 
 function SectionHeading({ icon: Icon, eyebrow, title, description }: { icon: typeof Landmark; eyebrow: string; title: string; description: string }) {
   return (
-    <div className="flex items-start gap-3 border-b border-border/60 pb-5">
-      <div className="rounded-xl border border-border/60 bg-muted/20 p-2 text-muted-foreground">
-        <Icon className="size-4" />
+    <div className="flex items-start gap-3 border-b border-border/60 pb-4 sm:pb-5">
+      <div className="shrink-0 rounded-xl border border-border/60 bg-muted/20 p-2 text-muted-foreground">
+        <Icon className="size-3.5 sm:size-4" />
       </div>
-      <div>
-        <div className={FORM_LABEL_CLASS}>{eyebrow}</div>
-        <div className="mt-1 text-xl font-semibold tracking-[-0.03em] text-foreground">{title}</div>
-        <div className="mt-1 text-sm leading-6 tracking-[0.01em] text-muted-foreground">{description}</div>
+      <div className="min-w-0">
+        <div className={cn(FORM_LABEL_CLASS, 'text-[10px] sm:text-[11px]')}>{eyebrow}</div>
+        <div className="mt-0.5 sm:mt-1 text-lg sm:text-xl font-semibold tracking-[-0.03em] text-foreground leading-tight sm:leading-normal">{title}</div>
+        <div className="mt-1 text-xs sm:text-sm leading-relaxed sm:leading-6 tracking-[0.01em] text-muted-foreground line-clamp-2 sm:line-clamp-none">{description}</div>
       </div>
     </div>
   )
@@ -1321,7 +1321,7 @@ function SelectionCard({
     <button
       aria-pressed={isSelected}
       className={cn(
-        'rounded-xl border px-4 py-4 text-left',
+        'rounded-xl border px-3 py-3 sm:px-4 sm:py-4 text-left transition-all duration-200',
         isSelected
           ? 'border-primary/35 bg-primary/5 shadow-sm'
           : 'border-border/50 bg-transparent',
@@ -1332,13 +1332,20 @@ function SelectionCard({
       onClick={onClick}
       type="button"
     >
-      <div className="flex items-start gap-3">
-        <div className={`rounded-xl border p-2 ${isSelected ? 'border-primary/25 bg-primary/8 text-primary' : 'border-border/60 bg-muted/15 text-muted-foreground'}`}>
+      <div className="flex flex-row items-center gap-3 sm:flex-col sm:items-start">
+        <div className={cn(
+          'flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors',
+          isSelected 
+            ? 'border-primary/25 bg-primary/8 text-primary' 
+            : 'border-border/60 bg-muted/15 text-muted-foreground'
+        )}>
           <Icon className="size-4" />
         </div>
-        <div>
+        <div className="min-w-0">
           <div className="text-sm font-semibold tracking-[0.01em] text-foreground">{title}</div>
-          <div className="mt-1 text-xs leading-5 tracking-[0.01em] text-muted-foreground">{description}</div>
+          <div className="mt-0.5 line-clamp-2 text-[11px] sm:text-xs leading-relaxed tracking-[0.01em] text-muted-foreground sm:mt-1">
+            {description}
+          </div>
         </div>
       </div>
     </button>

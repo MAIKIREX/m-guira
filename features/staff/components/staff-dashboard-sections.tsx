@@ -65,7 +65,7 @@ export function StaffOverviewPanel({
               Actualizar
             </Button>
           </CardHeader>
-          <CardContent className="space-y-5 p-6">
+          <CardContent className="space-y-5 p-4 sm:p-6">
             <div className="grid gap-3 md:grid-cols-4">
               <MetricCard icon={ShieldCheck} label="Onboarding" value={String(snapshot.onboarding.length)} />
               <MetricCard icon={ArrowRightLeft} label="Orders" value={String(snapshot.orders.length)} />
@@ -115,7 +115,7 @@ export function StaffOnboardingTable({
   const hasActiveFilters = query.trim().length > 0 || statusFilter !== 'all' || typeFilter !== 'all'
 
   return (
-    <Card className="border-0 bg-background shadow-none ring-0">
+    <Card className="overflow-hidden border-0 bg-background shadow-none ring-0">
       <CardHeader className="px-0 pt-0">
         <CardTitle className="text-3xl tracking-tight">Onboarding</CardTitle>
         <CardDescription>Revision y acciones KYC/KYB con join a `profiles`.</CardDescription>
@@ -336,7 +336,7 @@ export function StaffOrdersTable({
     <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'orders' | 'payins' | 'transfers')} className="gap-4">
       <div className="space-y-4">
         <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight">{tabCopy[activeTab].title}</h1>
+          <h1 className="text-3xl font-semibold tracking-tight break-words">{tabCopy[activeTab].title}</h1>
           <p className="text-sm text-muted-foreground">{tabCopy[activeTab].description}</p>
         </div>
         <TabsList
@@ -350,7 +350,7 @@ export function StaffOrdersTable({
       </div>
 
       <TabsContent value="orders">
-        <Card className="border-0 bg-background shadow-none ring-0">
+        <Card className="overflow-hidden border-0 bg-background shadow-none ring-0">
           <CardContent className="space-y-4 px-0 pb-0">
             <TableFilters
               query={query}
@@ -385,59 +385,120 @@ export function StaffOrdersTable({
               resultsCount={filteredOrders.length}
               totalCount={orders.length}
             />
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Rail</TableHead>
-                  <TableHead>Monto</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Archivos</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {orders.length === 0 ? (
-                  <EmptyRow colSpan={7} message="No hay ordenes disponibles." />
-                ) : hasActiveFilters && filteredOrders.length === 0 ? (
-                  <EmptyRow colSpan={7} message="No hay resultados con los filtros actuales." />
-                ) : (
-                  filteredOrders.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell>
-                        <div className="font-medium">#{order.id.slice(0, 8)}</div>
-                        <div className="text-xs text-muted-foreground">{formatDate(order.created_at)}</div>
-                      </TableCell>
-                      <TableCell>{order.order_type}</TableCell>
-                      <TableCell>{order.processing_rail}</TableCell>
-                      <TableCell>{order.amount_origin} {order.origin_currency}</TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
+            <div className="space-y-3 md:hidden">
+              {orders.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border/70 bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
+                  No hay ordenes disponibles.
+                </div>
+              ) : hasActiveFilters && filteredOrders.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border/70 bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
+                  No hay resultados con los filtros actuales.
+                </div>
+              ) : (
+                filteredOrders.map((order) => (
+                  <Card key={order.id} className="border-border/70 bg-card/95 shadow-sm">
+                    <CardContent className="space-y-4 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium text-foreground">#{order.id.slice(0, 8)}</div>
+                          <div className="mt-1 text-xs text-muted-foreground">{formatDate(order.created_at)}</div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
                           <StatusBadge value={order.status} />
                           {order.status === 'deposit_received' ? (
-                            <div className="text-xs text-muted-foreground">Pendiente de cotizacion final.</div>
+                            <span className="text-[10px] w-24 text-right leading-tight text-muted-foreground">Pendiente cotización</span>
                           ) : null}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {order.support_document_url ? <Badge variant="outline">support</Badge> : null}
-                          {order.evidence_url ? <Badge variant="outline">deposit-proof</Badge> : null}
-                          {order.staff_comprobante_url ? <Badge variant="outline">staff</Badge> : null}
-                          {!order.support_document_url && !order.evidence_url && !order.staff_comprobante_url ? <span className="text-xs text-muted-foreground">Sin archivos</span> : null}
+                      </div>
+
+                      <div className="grid gap-3 rounded-xl border border-border/60 bg-muted/15 p-3 sm:grid-cols-2">
+                        <div className="space-y-1">
+                          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Tipo</div>
+                          <div className="text-sm font-medium text-foreground">{order.order_type}</div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex justify-end">
-                          <OrderDetailDialog actor={actor} onUpdated={replaceOrder} order={order} />
+                        <div className="space-y-1">
+                          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Rail</div>
+                          <div className="text-sm font-medium text-foreground">{order.processing_rail}</div>
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                        <div className="space-y-1 sm:col-span-2">
+                          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Monto</div>
+                          <div className="text-sm font-medium text-foreground">{order.amount_origin} {order.origin_currency}</div>
+                        </div>
+                        <div className="space-y-1 sm:col-span-2">
+                          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Archivos</div>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {order.support_document_url ? <Badge variant="outline">support</Badge> : null}
+                            {order.evidence_url ? <Badge variant="outline">deposit-proof</Badge> : null}
+                            {order.staff_comprobante_url ? <Badge variant="outline">staff</Badge> : null}
+                            {!order.support_document_url && !order.evidence_url && !order.staff_comprobante_url ? <span className="text-xs text-muted-foreground">Sin archivos</span> : null}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end">
+                        <OrderDetailDialog actor={actor} onUpdated={replaceOrder} order={order} />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Rail</TableHead>
+                    <TableHead>Monto</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Archivos</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {orders.length === 0 ? (
+                    <EmptyRow colSpan={7} message="No hay ordenes disponibles." />
+                  ) : hasActiveFilters && filteredOrders.length === 0 ? (
+                    <EmptyRow colSpan={7} message="No hay resultados con los filtros actuales." />
+                  ) : (
+                    filteredOrders.map((order) => (
+                      <TableRow key={order.id}>
+                        <TableCell>
+                          <div className="font-medium">#{order.id.slice(0, 8)}</div>
+                          <div className="text-xs text-muted-foreground">{formatDate(order.created_at)}</div>
+                        </TableCell>
+                        <TableCell>{order.order_type}</TableCell>
+                        <TableCell>{order.processing_rail}</TableCell>
+                        <TableCell>{order.amount_origin} {order.origin_currency}</TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <StatusBadge value={order.status} />
+                            {order.status === 'deposit_received' ? (
+                              <div className="text-xs text-muted-foreground">Pendiente de cotizacion final.</div>
+                            ) : null}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {order.support_document_url ? <Badge variant="outline">support</Badge> : null}
+                            {order.evidence_url ? <Badge variant="outline">deposit-proof</Badge> : null}
+                            {order.staff_comprobante_url ? <Badge variant="outline">staff</Badge> : null}
+                            {!order.support_document_url && !order.evidence_url && !order.staff_comprobante_url ? <span className="text-xs text-muted-foreground">Sin archivos</span> : null}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex justify-end">
+                            <OrderDetailDialog actor={actor} onUpdated={replaceOrder} order={order} />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       </TabsContent>
@@ -502,7 +563,7 @@ export function StaffSupportTable({
   const hasActiveFilters = query.trim().length > 0 || statusFilter !== 'all'
 
   return (
-    <Card className="border-0 bg-background shadow-none ring-0">
+    <Card className="overflow-hidden border-0 bg-background shadow-none ring-0">
       <CardHeader className="px-0 pt-0">
         <CardTitle className="text-3xl tracking-tight">Support tickets</CardTitle>
         <CardDescription>Bandeja operativa de `support_tickets` con cambio de estado.</CardDescription>
@@ -527,43 +588,92 @@ export function StaffSupportTable({
           resultsCount={filteredTickets.length}
           totalCount={tickets.length}
         />
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Cliente</TableHead>
-              <TableHead>Asunto</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Contacto</TableHead>
-              <TableHead>Fecha</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {tickets.length === 0 ? (
-              <EmptyRow colSpan={6} message="No hay tickets abiertos." />
-            ) : hasActiveFilters && filteredTickets.length === 0 ? (
-              <EmptyRow colSpan={6} message="No hay resultados con los filtros actuales." />
-            ) : (
-              filteredTickets.map((ticket) => (
-                <TableRow key={ticket.id}>
-                  <TableCell>
-                    <div className="font-medium">{ticket.profiles?.full_name ?? 'Sin nombre'}</div>
-                    <div className="text-xs text-muted-foreground">{ticket.profiles?.email ?? ticket.contact_email}</div>
-                  </TableCell>
-                  <TableCell className="max-w-[240px] truncate">{ticket.subject}</TableCell>
-                  <TableCell><StatusBadge value={ticket.status ?? 'open'} /></TableCell>
-                  <TableCell>{ticket.contact_phone || ticket.contact_email}</TableCell>
-                  <TableCell>{formatDate(ticket.created_at)}</TableCell>
-                  <TableCell>
-                    <div className="flex justify-end">
-                      <SupportTicketActions actor={actor} onUpdated={replaceSupportTicket} ticket={ticket} />
+        <div className="space-y-3 md:hidden">
+          {tickets.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border/70 bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
+              No hay tickets abiertos.
+            </div>
+          ) : hasActiveFilters && filteredTickets.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border/70 bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
+              No hay resultados con los filtros actuales.
+            </div>
+          ) : (
+            filteredTickets.map((ticket) => (
+              <Card key={ticket.id} className="border-border/70 bg-card/95 shadow-sm">
+                <CardContent className="space-y-4 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium text-foreground">{ticket.profiles?.full_name ?? 'Sin nombre'}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">{ticket.profiles?.email ?? ticket.contact_email}</div>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+                    <div className="flex flex-col items-end gap-1">
+                      <StatusBadge value={ticket.status ?? 'open'} />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 rounded-xl border border-border/60 bg-muted/15 p-3 sm:grid-cols-2">
+                    <div className="space-y-1 sm:col-span-2">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Asunto</div>
+                      <div className="text-sm font-medium text-foreground">{ticket.subject}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Contacto</div>
+                      <div className="text-sm font-medium text-foreground">{ticket.contact_phone || ticket.contact_email}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Fecha</div>
+                      <div className="text-sm font-medium text-foreground">{formatDate(ticket.created_at)}</div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <SupportTicketActions actor={actor} onUpdated={replaceSupportTicket} ticket={ticket} />
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+
+        <div className="hidden md:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Cliente</TableHead>
+                <TableHead>Asunto</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead>Contacto</TableHead>
+                <TableHead>Fecha</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tickets.length === 0 ? (
+                <EmptyRow colSpan={6} message="No hay tickets abiertos." />
+              ) : hasActiveFilters && filteredTickets.length === 0 ? (
+                <EmptyRow colSpan={6} message="No hay resultados con los filtros actuales." />
+              ) : (
+                filteredTickets.map((ticket) => (
+                  <TableRow key={ticket.id}>
+                    <TableCell>
+                      <div className="font-medium">{ticket.profiles?.full_name ?? 'Sin nombre'}</div>
+                      <div className="text-xs text-muted-foreground">{ticket.profiles?.email ?? ticket.contact_email}</div>
+                    </TableCell>
+                    <TableCell className="max-w-[240px] truncate">{ticket.subject}</TableCell>
+                    <TableCell><StatusBadge value={ticket.status ?? 'open'} /></TableCell>
+                    <TableCell>{ticket.contact_phone || ticket.contact_email}</TableCell>
+                    <TableCell>{formatDate(ticket.created_at)}</TableCell>
+                    <TableCell>
+                      <div className="flex justify-end">
+                        <SupportTicketActions actor={actor} onUpdated={replaceSupportTicket} ticket={ticket} />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   )
@@ -624,7 +734,7 @@ export function StaffUsersTable({
   }
 
   return (
-    <Card className="border-0 bg-background shadow-none ring-0">
+    <Card className="overflow-hidden border-0 bg-background shadow-none ring-0">
       <CardHeader className="gap-3 px-0 pt-0 md:flex-row md:items-start md:justify-between">
         <div>
           <CardTitle className="text-3xl tracking-tight">Usuarios</CardTitle>
@@ -672,28 +782,22 @@ export function StaffUsersTable({
           resultsCount={filteredUsers.length}
           totalCount={users.length}
         />
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Usuario</TableHead>
-              <TableHead>Rol</TableHead>
-              <TableHead>Onboarding</TableHead>
-              <TableHead>Archivado</TableHead>
-              <TableHead>Alta</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users.length === 0 ? (
-              <EmptyRow colSpan={6} message="No hay perfiles disponibles." />
-            ) : hasActiveFilters && filteredUsers.length === 0 ? (
-              <EmptyRow colSpan={6} message="No hay resultados con los filtros actuales." />
-            ) : (
-              filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="size-10 rounded-xl ring-1 ring-border/70">
+        <div className="space-y-3 md:hidden">
+          {users.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border/70 bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
+              No hay perfiles disponibles.
+            </div>
+          ) : hasActiveFilters && filteredUsers.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border/70 bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
+              No hay resultados con los filtros actuales.
+            </div>
+          ) : (
+            filteredUsers.map((user) => (
+              <Card key={user.id} className="border-border/70 bg-card/95 shadow-sm">
+                <CardContent className="space-y-4 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Avatar className="size-10 shrink-0 rounded-xl ring-1 ring-border/70">
                         <AvatarImage
                           alt={user.full_name || 'Usuario'}
                           src={readProfileAvatarUrl(user.metadata) ?? undefined}
@@ -703,25 +807,91 @@ export function StaffUsersTable({
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0">
-                        <div className="font-medium">{user.full_name || 'Sin nombre'}</div>
+                        <div className="truncate font-medium text-foreground">{user.full_name || 'Sin nombre'}</div>
                         <div className="truncate text-xs text-muted-foreground">{user.email}</div>
                       </div>
                     </div>
-                  </TableCell>
-                  <TableCell><Badge variant="outline">{user.role}</Badge></TableCell>
-                  <TableCell><StatusBadge value={user.onboarding_status} /></TableCell>
-                  <TableCell>{user.is_archived ? 'Si' : 'No'}</TableCell>
-                  <TableCell>{formatDate(user.created_at)}</TableCell>
-                  <TableCell>
-                    <div className="flex justify-end">
-                      {isAdmin ? <UserAdminActions actor={actor} onUpdated={handleUserUpdated} user={user} /> : <span className="text-xs text-muted-foreground">Solo admin</span>}
+                    <div className="shrink-0">
+                      <Badge variant="outline" className="text-[10px]">{user.role}</Badge>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+                  </div>
+
+                  <div className="grid gap-3 rounded-xl border border-border/60 bg-muted/15 p-3 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Onboarding</div>
+                      <StatusBadge value={user.onboarding_status} />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Archivado</div>
+                      <div className="text-sm font-medium text-foreground">{user.is_archived ? 'Si' : 'No'}</div>
+                    </div>
+                    <div className="space-y-1 sm:col-span-2">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Alta</div>
+                      <div className="text-sm font-medium text-foreground">{formatDate(user.created_at)}</div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    {isAdmin ? <UserAdminActions actor={actor} onUpdated={handleUserUpdated} user={user} /> : <span className="text-xs text-muted-foreground">Solo admin</span>}
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+
+        <div className="hidden md:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Usuario</TableHead>
+                <TableHead>Rol</TableHead>
+                <TableHead>Onboarding</TableHead>
+                <TableHead>Archivado</TableHead>
+                <TableHead>Alta</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.length === 0 ? (
+                <EmptyRow colSpan={6} message="No hay perfiles disponibles." />
+              ) : hasActiveFilters && filteredUsers.length === 0 ? (
+                <EmptyRow colSpan={6} message="No hay resultados con los filtros actuales." />
+              ) : (
+                filteredUsers.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="size-10 rounded-xl ring-1 ring-border/70">
+                          <AvatarImage
+                            alt={user.full_name || 'Usuario'}
+                            src={readProfileAvatarUrl(user.metadata) ?? undefined}
+                          />
+                          <AvatarFallback className="rounded-xl bg-muted/70 text-[0.8rem] font-semibold text-foreground/80">
+                            {getInitials(user.full_name || user.email)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <div className="font-medium">{user.full_name || 'Sin nombre'}</div>
+                          <div className="truncate text-xs text-muted-foreground">{user.email}</div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell><Badge variant="outline">{user.role}</Badge></TableCell>
+                    <TableCell><StatusBadge value={user.onboarding_status} /></TableCell>
+                    <TableCell>{user.is_archived ? 'Si' : 'No'}</TableCell>
+                    <TableCell>{formatDate(user.created_at)}</TableCell>
+                    <TableCell>
+                      <div className="flex justify-end">
+                        {isAdmin ? <UserAdminActions actor={actor} onUpdated={handleUserUpdated} user={user} /> : <span className="text-xs text-muted-foreground">Solo admin</span>}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   )
@@ -780,7 +950,7 @@ export function StaffPsavPanel({
 function MetricCard({ icon: Icon, label, value }: { icon: typeof Users; label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
-      <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+      <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-[0.1em] text-muted-foreground max-w-full">
         <Icon className="size-4" />
         {label}
       </div>
@@ -936,7 +1106,7 @@ function AuditTable({ logs }: { logs: AuditLog[] }) {
   ]
 
   return (
-    <Card className="border-0 bg-background shadow-none ring-0">
+    <Card className="overflow-hidden border-0 bg-background shadow-none ring-0">
       <CardHeader className="px-0 pt-0">
         <CardTitle className="text-3xl tracking-tight">Auditoria completa</CardTitle>
         <CardDescription>Lectura directa de `audit_logs` con actor, registro afectado y campos modificados.</CardDescription>
@@ -990,63 +1160,156 @@ function AuditTable({ logs }: { logs: AuditLog[] }) {
             ))}
           </div>
         </div>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {visibleColumns.user ? <TableHead>Usuario</TableHead> : null}
-              {visibleColumns.role ? <TableHead>Rol</TableHead> : null}
-              {visibleColumns.table ? <TableHead>Tabla</TableHead> : null}
-              {visibleColumns.record ? <TableHead>Registro</TableHead> : null}
-              {visibleColumns.action ? <TableHead>Accion</TableHead> : null}
-              {visibleColumns.fields ? <TableHead>Campos</TableHead> : null}
-              {visibleColumns.reason ? <TableHead>Motivo</TableHead> : null}
-              {visibleColumns.source ? <TableHead>Fuente</TableHead> : null}
-              {visibleColumns.date ? <TableHead>Fecha</TableHead> : null}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {logs.length === 0 ? (
-              <EmptyRow colSpan={visibleColumnCount} message="No hay eventos de auditoria." />
-            ) : hasActiveFilters && filteredLogs.length === 0 ? (
-              <EmptyRow colSpan={visibleColumnCount} message="No hay resultados con los filtros actuales." />
-            ) : (
-              filteredLogs.map((log) => (
-                <TableRow key={log.id}>
-                  {visibleColumns.user ? (
-                    <TableCell>
-                      <div className="min-w-[220px]">
-                        <div className="font-medium">{actorLabel(log)}</div>
-                        <div className="text-xs text-muted-foreground">{actorSubLabel(log)}</div>
-                      </div>
-                    </TableCell>
-                  ) : null}
-                  {visibleColumns.role ? <TableCell>{log.role || '-'}</TableCell> : null}
-                  {visibleColumns.table ? <TableCell className="font-medium">{log.table_name}</TableCell> : null}
-                  {visibleColumns.record ? <TableCell className="font-mono text-xs">{log.record_id || '-'}</TableCell> : null}
-                  {visibleColumns.action ? <TableCell><Badge variant="outline">{log.action}</Badge></TableCell> : null}
-                  {visibleColumns.fields ? (
-                    <TableCell className="max-w-[260px]">
-                      {log.affected_fields && log.affected_fields.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {log.affected_fields.map((field) => (
-                            <Badge key={`${log.id}-${field}`} variant="secondary" className="font-mono text-[10px]">
-                              {field}
-                            </Badge>
-                          ))}
-                        </div>
+        <div className="space-y-3 md:hidden">
+          {logs.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border/70 bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
+              No hay eventos de auditoria.
+            </div>
+          ) : hasActiveFilters && filteredLogs.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border/70 bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
+              No hay resultados con los filtros actuales.
+            </div>
+          ) : (
+            filteredLogs.map((log) => (
+              <Card key={log.id} className="border-border/70 bg-card/95 shadow-sm">
+                <CardContent className="space-y-4 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      {visibleColumns.user ? (
+                        <>
+                          <div className="font-medium text-foreground">{actorLabel(log)}</div>
+                          <div className="mt-1 text-xs text-muted-foreground">{actorSubLabel(log)}</div>
+                        </>
                       ) : (
-                        <span className="text-muted-foreground">Sin detalle</span>
+                        <div className="font-medium text-foreground">Audit ID: {log.id}</div>
                       )}
-                    </TableCell>
-                  ) : null}
-                  {visibleColumns.reason ? <TableCell className="max-w-[360px] truncate">{log.reason}</TableCell> : null}
-                  {visibleColumns.source ? <TableCell>{log.source}</TableCell> : null}
-                  {visibleColumns.date ? <TableCell>{formatDate(log.created_at)}</TableCell> : null}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+                    </div>
+                    {visibleColumns.action ? (
+                      <div className="shrink-0">
+                        <Badge variant="outline">{log.action}</Badge>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="grid gap-3 rounded-xl border border-border/60 bg-muted/15 p-3 sm:grid-cols-2">
+                    {visibleColumns.table ? (
+                      <div className="space-y-1">
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Tabla</div>
+                        <div className="text-sm font-medium text-foreground">{log.table_name}</div>
+                      </div>
+                    ) : null}
+                    {visibleColumns.record ? (
+                      <div className="space-y-1">
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Registro</div>
+                        <div className="text-sm font-mono text-foreground">{log.record_id || '-'}</div>
+                      </div>
+                    ) : null}
+                    {visibleColumns.role ? (
+                      <div className="space-y-1">
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Rol</div>
+                        <div className="text-sm font-medium text-foreground">{log.role || '-'}</div>
+                      </div>
+                    ) : null}
+                    {visibleColumns.source ? (
+                      <div className="space-y-1">
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Fuente</div>
+                        <div className="text-sm font-medium text-foreground">{log.source}</div>
+                      </div>
+                    ) : null}
+                    {visibleColumns.date ? (
+                      <div className="space-y-1 sm:col-span-2">
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Fecha</div>
+                        <div className="text-sm font-medium text-foreground">{formatDate(log.created_at)}</div>
+                      </div>
+                    ) : null}
+                    {visibleColumns.reason ? (
+                      <div className="space-y-1 sm:col-span-2">
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Motivo</div>
+                        <div className="text-sm font-medium text-foreground break-words">{log.reason}</div>
+                      </div>
+                    ) : null}
+                    {visibleColumns.fields ? (
+                      <div className="space-y-1 sm:col-span-2">
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Campos</div>
+                        {log.affected_fields && log.affected_fields.length > 0 ? (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {log.affected_fields.map((field) => (
+                              <Badge key={`${log.id}-${field}`} variant="secondary" className="font-mono text-[10px]">
+                                {field}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Sin detalle</span>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+
+        <div className="hidden md:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {visibleColumns.user ? <TableHead>Usuario</TableHead> : null}
+                {visibleColumns.role ? <TableHead>Rol</TableHead> : null}
+                {visibleColumns.table ? <TableHead>Tabla</TableHead> : null}
+                {visibleColumns.record ? <TableHead>Registro</TableHead> : null}
+                {visibleColumns.action ? <TableHead>Accion</TableHead> : null}
+                {visibleColumns.fields ? <TableHead>Campos</TableHead> : null}
+                {visibleColumns.reason ? <TableHead>Motivo</TableHead> : null}
+                {visibleColumns.source ? <TableHead>Fuente</TableHead> : null}
+                {visibleColumns.date ? <TableHead>Fecha</TableHead> : null}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {logs.length === 0 ? (
+                <EmptyRow colSpan={visibleColumnCount} message="No hay eventos de auditoria." />
+              ) : hasActiveFilters && filteredLogs.length === 0 ? (
+                <EmptyRow colSpan={visibleColumnCount} message="No hay resultados con los filtros actuales." />
+              ) : (
+                filteredLogs.map((log) => (
+                  <TableRow key={log.id}>
+                    {visibleColumns.user ? (
+                      <TableCell>
+                        <div className="min-w-[220px]">
+                          <div className="font-medium">{actorLabel(log)}</div>
+                          <div className="text-xs text-muted-foreground">{actorSubLabel(log)}</div>
+                        </div>
+                      </TableCell>
+                    ) : null}
+                    {visibleColumns.role ? <TableCell>{log.role || '-'}</TableCell> : null}
+                    {visibleColumns.table ? <TableCell className="font-medium">{log.table_name}</TableCell> : null}
+                    {visibleColumns.record ? <TableCell className="font-mono text-xs">{log.record_id || '-'}</TableCell> : null}
+                    {visibleColumns.action ? <TableCell><Badge variant="outline">{log.action}</Badge></TableCell> : null}
+                    {visibleColumns.fields ? (
+                      <TableCell className="max-w-[260px]">
+                        {log.affected_fields && log.affected_fields.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {log.affected_fields.map((field) => (
+                              <Badge key={`${log.id}-${field}`} variant="secondary" className="font-mono text-[10px]">
+                                {field}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">Sin detalle</span>
+                        )}
+                      </TableCell>
+                    ) : null}
+                    {visibleColumns.reason ? <TableCell className="max-w-[360px] truncate">{log.reason}</TableCell> : null}
+                    {visibleColumns.source ? <TableCell>{log.source}</TableCell> : null}
+                    {visibleColumns.date ? <TableCell>{formatDate(log.created_at)}</TableCell> : null}
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   )
@@ -1060,7 +1323,7 @@ function TransfersTable({
   showHeader?: boolean
 }) {
   return (
-    <Card>
+    <Card className="overflow-hidden">
       {showHeader ? (
         <CardHeader>
           <CardTitle>Bridge transfers</CardTitle>
@@ -1068,34 +1331,75 @@ function TransfersTable({
         </CardHeader>
       ) : null}
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Kind</TableHead>
-              <TableHead>Business purpose</TableHead>
-              <TableHead>Monto</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Fecha</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {transfers.length === 0 ? (
-              <EmptyRow colSpan={6} message="No hay transferencias para mostrar." />
-            ) : (
-              transfers.map((transfer) => (
-                <TableRow key={transfer.id}>
-                  <TableCell className="font-medium">#{transfer.id.slice(0, 8)}</TableCell>
-                  <TableCell>{transfer.transfer_kind}</TableCell>
-                  <TableCell>{transfer.business_purpose}</TableCell>
-                  <TableCell>{transfer.amount} {transfer.currency}</TableCell>
-                  <TableCell><StatusBadge value={transfer.status} /></TableCell>
-                  <TableCell>{formatDate(transfer.created_at)}</TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+        <div className="space-y-3 md:hidden">
+          {transfers.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border/70 bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
+              No hay transferencias para mostrar.
+            </div>
+          ) : (
+            transfers.map((transfer) => (
+              <Card key={transfer.id} className="border-border/70 bg-card/95 shadow-sm">
+                <CardContent className="space-y-4 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium text-foreground">#{transfer.id.slice(0, 8)}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">{formatDate(transfer.created_at)}</div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <StatusBadge value={transfer.status} />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 rounded-xl border border-border/60 bg-muted/15 p-3 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Kind</div>
+                      <div className="text-sm font-medium text-foreground">{transfer.transfer_kind}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Business Purpose</div>
+                      <div className="text-sm font-medium text-foreground">{transfer.business_purpose || '-'}</div>
+                    </div>
+                    <div className="space-y-1 sm:col-span-2">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Monto</div>
+                      <div className="text-sm font-medium text-foreground">{transfer.amount} {transfer.currency}</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+
+        <div className="hidden md:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Kind</TableHead>
+                <TableHead>Business purpose</TableHead>
+                <TableHead>Monto</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead>Fecha</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {transfers.length === 0 ? (
+                <EmptyRow colSpan={6} message="No hay transferencias para mostrar." />
+              ) : (
+                transfers.map((transfer) => (
+                  <TableRow key={transfer.id}>
+                    <TableCell className="font-medium">#{transfer.id.slice(0, 8)}</TableCell>
+                    <TableCell>{transfer.transfer_kind}</TableCell>
+                    <TableCell>{transfer.business_purpose}</TableCell>
+                    <TableCell>{transfer.amount} {transfer.currency}</TableCell>
+                    <TableCell><StatusBadge value={transfer.status} /></TableCell>
+                    <TableCell>{formatDate(transfer.created_at)}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   )
@@ -1162,45 +1466,82 @@ function ConfigPanel({
         </CardHeader>
         <CardContent className="p-0">
           {!isPrivileged ? <div className="p-6"><AdminOnlyNotice /></div> : null}
-          <Table>
-            <TableHeader className="bg-muted/30">
-              <TableRow className="border-none hover:bg-transparent">
-                <TableHead className="py-3 pl-6 text-[11px] font-bold uppercase tracking-wider">Concepto / Tipo</TableHead>
-                <TableHead className="py-3 text-center text-[11px] font-bold uppercase tracking-wider">Valor</TableHead>
-                <TableHead className="py-3 pr-6 text-right"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {feesConfig.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="py-8 text-center text-sm italic text-muted-foreground">
-                    No hay comisiones configuradas.
-                  </TableCell>
+          {/* Móvil */}
+          <div className="space-y-3 p-4 md:hidden">
+            {feesConfig.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-border/70 bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
+                No hay comisiones configuradas.
+              </div>
+            ) : (
+              feesConfig.map((record) => (
+                <Card key={record.id} className="border-border/70 bg-card/95 shadow-sm">
+                  <CardContent className="space-y-4 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-semibold text-foreground/90">{record.type}</div>
+                        <div className="mt-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                          {record.fee_type === 'percentage' ? 'Porcentual' : 'Monto Fijo'}
+                        </div>
+                      </div>
+                      <div className="shrink-0">
+                        <span className="inline-flex items-center rounded-md border border-border/40 bg-muted/60 px-2.5 py-1 text-xs font-bold">
+                          {record.value}{record.fee_type === 'percentage' ? '%' : ` ${record.currency}`}
+                        </span>
+                      </div>
+                    </div>
+                    {isPrivileged && (
+                      <div className="flex justify-end pt-1">
+                        <FeeConfigDialog actor={actor} onUpdated={onUpdateFeeConfig} record={record} />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+
+          {/* Desktop */}
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader className="bg-muted/30">
+                <TableRow className="border-none hover:bg-transparent">
+                  <TableHead className="py-3 pl-6 text-[11px] font-bold uppercase tracking-wider">Concepto / Tipo</TableHead>
+                  <TableHead className="py-3 text-center text-[11px] font-bold uppercase tracking-wider">Valor</TableHead>
+                  <TableHead className="py-3 pr-6 text-right"></TableHead>
                 </TableRow>
-              ) : (
-                feesConfig.map((record) => (
-                  <TableRow key={record.id} className={cn('group', interactiveCardClassName, 'hover:bg-muted/30')}>
-                    <TableCell className="py-4 pl-6">
-                      <div className="text-sm font-semibold text-foreground/90">{record.type}</div>
-                      <div className="mt-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                        {record.fee_type === 'percentage' ? 'Porcentual' : 'Monto Fijo'}
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-4 text-center">
-                      <span className="inline-flex items-center rounded-md border border-border/40 bg-muted/60 px-2.5 py-1 text-xs font-bold">
-                        {record.value}{record.fee_type === 'percentage' ? '%' : ` ${record.currency}`}
-                      </span>
-                    </TableCell>
-                    <TableCell className="py-4 pr-6 text-right">
-                      <div className={tableActionClassName}>
-                        {isPrivileged ? <FeeConfigDialog actor={actor} onUpdated={onUpdateFeeConfig} record={record} /> : null}
-                      </div>
+              </TableHeader>
+              <TableBody>
+                {feesConfig.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={3} className="py-8 text-center text-sm italic text-muted-foreground">
+                      No hay comisiones configuradas.
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  feesConfig.map((record) => (
+                    <TableRow key={record.id} className={cn('group', interactiveCardClassName, 'hover:bg-muted/30')}>
+                      <TableCell className="py-4 pl-6">
+                        <div className="text-sm font-semibold text-foreground/90">{record.type}</div>
+                        <div className="mt-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                          {record.fee_type === 'percentage' ? 'Porcentual' : 'Monto Fijo'}
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-4 text-center">
+                        <span className="inline-flex items-center rounded-md border border-border/40 bg-muted/60 px-2.5 py-1 text-xs font-bold">
+                          {record.value}{record.fee_type === 'percentage' ? '%' : ` ${record.currency}`}
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-4 pr-6 text-right">
+                        <div className={tableActionClassName}>
+                          {isPrivileged ? <FeeConfigDialog actor={actor} onUpdated={onUpdateFeeConfig} record={record} /> : null}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
@@ -1265,46 +1606,83 @@ function ConfigPanel({
           </CardHeader>
           <CardContent className="p-0">
             {!isPrivileged ? <div className="p-6"><AdminOnlyNotice /></div> : null}
-            <Table>
-              <TableHeader className="bg-muted/30">
-                <TableRow className="border-none hover:bg-transparent">
-                  <TableHead className="py-3 pl-6 text-[11px] font-bold uppercase tracking-wider">Variable</TableHead>
-                  <TableHead className="py-3 text-[11px] font-bold uppercase tracking-wider">Valor Actual</TableHead>
-                  <TableHead className="py-3 pr-6 text-right"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {appSettings.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={3} className="py-8 text-center text-sm italic text-muted-foreground">
-                      Sin variables detectadas.
-                    </TableCell>
+            {/* Móvil */}
+            <div className="space-y-3 p-4 md:hidden">
+              {appSettings.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border/70 bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
+                  Sin variables detectadas.
+                </div>
+              ) : (
+                appSettings.map((record, index) => {
+                  const key = String(record.key ?? record.name ?? `setting-${index + 1}`)
+                  const value = String(record.value ?? 'sin valor')
+                  return (
+                    <Card key={String(record.id ?? key)} className="border-border/70 bg-card/95 shadow-sm">
+                      <CardContent className="space-y-4 p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="font-mono text-[13px] font-bold tracking-tight text-sky-700 dark:text-cyan-300 break-all">{key}</div>
+                          </div>
+                          {isPrivileged && (
+                            <div className="shrink-0">
+                              <AppSettingDialog actor={actor} onUpdated={onUpdateAppSetting} record={record} />
+                            </div>
+                          )}
+                        </div>
+                        <div className="rounded-xl border border-border/60 bg-muted/15 p-3">
+                          <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Valor Actual</div>
+                          <div className="text-xs font-medium text-foreground break-all">{value}</div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })
+              )}
+            </div>
+
+            {/* Desktop */}
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader className="bg-muted/30">
+                  <TableRow className="border-none hover:bg-transparent">
+                    <TableHead className="py-3 pl-6 text-[11px] font-bold uppercase tracking-wider">Variable</TableHead>
+                    <TableHead className="py-3 text-[11px] font-bold uppercase tracking-wider">Valor Actual</TableHead>
+                    <TableHead className="py-3 pr-6 text-right"></TableHead>
                   </TableRow>
-                ) : (
-                  appSettings.map((record, index) => {
-                    const key = String(record.key ?? record.name ?? `setting-${index + 1}`)
-                    const value = String(record.value ?? 'sin valor')
-                    return (
-                      <TableRow key={String(record.id ?? key)} className={cn('group', interactiveCardClassName, 'hover:bg-muted/30')}>
-                        <TableCell className="py-4 pl-6">
-                          <div className="font-mono text-[13px] font-bold tracking-tight text-sky-700 dark:text-cyan-300">{key}</div>
-                        </TableCell>
-                        <TableCell className="max-w-[200px] py-4">
-                          <div className="truncate text-[12px] font-medium text-muted-foreground" title={value}>
-                            {value.length > 35 ? `${value.slice(0, 35)}...` : value}
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-4 pr-6 text-right">
-                          <div className={tableActionClassName}>
-                            {isPrivileged ? <AppSettingDialog actor={actor} onUpdated={onUpdateAppSetting} record={record} /> : null}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {appSettings.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={3} className="py-8 text-center text-sm italic text-muted-foreground">
+                        Sin variables detectadas.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    appSettings.map((record, index) => {
+                      const key = String(record.key ?? record.name ?? `setting-${index + 1}`)
+                      const value = String(record.value ?? 'sin valor')
+                      return (
+                        <TableRow key={String(record.id ?? key)} className={cn('group', interactiveCardClassName, 'hover:bg-muted/30')}>
+                          <TableCell className="py-4 pl-6">
+                            <div className="font-mono text-[13px] font-bold tracking-tight text-sky-700 dark:text-cyan-300">{key}</div>
+                          </TableCell>
+                          <TableCell className="max-w-[200px] py-4">
+                            <div className="truncate text-[12px] font-medium text-muted-foreground" title={value}>
+                              {value.length > 35 ? `${value.slice(0, 35)}...` : value}
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-4 pr-6 text-right">
+                            <div className={tableActionClassName}>
+                              {isPrivileged ? <AppSettingDialog actor={actor} onUpdated={onUpdateAppSetting} record={record} /> : null}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -1339,78 +1717,143 @@ function PsavPanel({
       <CardContent className="p-0">
         {!isPrivileged ? <div className="p-6"><AdminOnlyNotice /></div> : null}
 
-        <Table>
-          <TableHeader className="bg-muted/30">
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="w-[80px] py-4 pl-6">QR</TableHead>
-              <TableHead className="py-4">Canal</TableHead>
-              <TableHead className="py-4">Banco y Cuenta</TableHead>
-              <TableHead className="py-4 text-center">Moneda</TableHead>
-              <TableHead className="py-4">Estado</TableHead>
-              <TableHead className="py-4 pr-6 text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {records.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="py-12 text-center">
-                  <div className="flex flex-col items-center justify-center space-y-2 text-muted-foreground">
-                    <CircleDollarSign className="size-8 opacity-20" />
-                    <p className="text-sm font-medium">No hay configuraciones PSAV</p>
-                    <p className="text-xs">Usa el boton &quot;Nuevo PSAV&quot; para empezar.</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              records.map((record) => (
-                <TableRow key={record.id} className={cn('group', interactiveCardClassName, 'hover:bg-muted/30')}>
-                  <TableCell className="py-4 pl-6">
-                    {record.qr_url ? (
-                      <div className="relative size-10 overflow-hidden rounded-lg border border-border/80 bg-card p-1 shadow-sm transition-transform group-hover:scale-110">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={record.qr_url}
-                          alt="QR"
-                          className="size-full object-contain"
-                        />
+        {/* Móvil */}
+        <div className="space-y-3 p-4 md:hidden">
+          {records.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border/70 bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
+              <div className="flex flex-col items-center justify-center space-y-2">
+                <CircleDollarSign className="size-8 opacity-20" />
+                <p className="font-medium">No hay configuraciones PSAV</p>
+              </div>
+            </div>
+          ) : (
+            records.map((record) => (
+              <Card key={record.id} className="border-border/70 bg-card/95 shadow-sm">
+                <CardContent className="space-y-4 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      {record.qr_url ? (
+                        <div className="size-12 shrink-0 overflow-hidden rounded-lg border border-border/80 bg-card p-1 shadow-sm">
+                          <img src={record.qr_url} alt="QR" className="size-full object-contain" />
+                        </div>
+                      ) : (
+                        <div className="flex size-12 shrink-0 items-center justify-center rounded-lg border border-dashed border-border/80 bg-muted/20">
+                          <ShieldCheck className="size-5 text-muted-foreground/40" />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <div className="font-semibold text-foreground/90 leading-tight">{record.name}</div>
+                        <div className="mt-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">ID: {record.id.slice(0, 8)}</div>
                       </div>
-                    ) : (
-                      <div className="flex size-10 items-center justify-center rounded-lg border border-dashed border-border/80 bg-muted/20">
-                        <ShieldCheck className="size-4 text-muted-foreground/40" />
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell className="py-4">
-                    <div className="font-semibold text-foreground/90">{record.name}</div>
-                    <div className="mt-0.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">ID: {record.id.slice(0, 8)}</div>
-                  </TableCell>
-                  <TableCell className="py-4">
-                    <div className="text-sm font-medium">{record.bank_name}</div>
-                    <div className="mt-0.5 font-mono text-xs text-muted-foreground">{record.account_number}</div>
-                  </TableCell>
-                  <TableCell className="py-4 text-center text-xs font-bold">
-                    <span className="rounded-md border border-border/40 bg-muted/60 px-2 py-1">
-                      {record.currency}
-                    </span>
-                  </TableCell>
-                  <TableCell className="py-4">
+                    </div>
                     <Badge
                       variant={record.is_active ? 'default' : 'outline'}
-                      className={record.is_active ? 'border-emerald-400/20 bg-emerald-400/15 text-emerald-700 shadow-none hover:bg-emerald-400/20 dark:text-emerald-300' : 'border-border/60 text-muted-foreground'}
+                      className={record.is_active ? 'border-emerald-400/20 bg-emerald-400/15 text-emerald-700 shadow-none dark:text-emerald-300' : 'border-border/60 text-muted-foreground'}
                     >
                       {record.is_active ? 'Activo' : 'Inactivo'}
                     </Badge>
-                  </TableCell>
-                  <TableCell className="py-4 pr-6 text-right">
-                    <div className={tableActionClassName}>
-                      <PsavConfigDialogs actor={actor} onUpdated={onChangeRecord} record={record} />
+                  </div>
+
+                  <div className="grid gap-3 rounded-xl border border-border/60 bg-muted/15 p-3">
+                    <div className="flex justify-between items-center sm:block sm:space-y-1">
+                      <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Banco y Cuenta</div>
+                      <div className="text-right sm:text-left">
+                        <div className="text-sm font-medium">{record.bank_name}</div>
+                        <div className="font-mono text-[10px] text-muted-foreground">{record.account_number}</div>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center sm:block sm:space-y-1 pt-2 border-t border-border/40 sm:border-0 sm:pt-0">
+                      <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Moneda</div>
+                      <span className="rounded-md border border-border/40 bg-muted/60 px-2 py-0.5 text-xs font-bold">
+                        {record.currency}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-1">
+                    <PsavConfigDialogs actor={actor} onUpdated={onChangeRecord} record={record} />
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+
+        {/* Desktop */}
+        <div className="hidden md:block">
+          <Table>
+            <TableHeader className="bg-muted/30">
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="w-[80px] py-4 pl-6">QR</TableHead>
+                <TableHead className="py-4">Canal</TableHead>
+                <TableHead className="py-4">Banco y Cuenta</TableHead>
+                <TableHead className="py-4 text-center">Moneda</TableHead>
+                <TableHead className="py-4">Estado</TableHead>
+                <TableHead className="py-4 pr-6 text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {records.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-12 text-center">
+                    <div className="flex flex-col items-center justify-center space-y-2 text-muted-foreground">
+                      <CircleDollarSign className="size-8 opacity-20" />
+                      <p className="text-sm font-medium">No hay configuraciones PSAV</p>
+                      <p className="text-xs">Usa el boton &quot;Nuevo PSAV&quot; para empezar.</p>
                     </div>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                records.map((record) => (
+                  <TableRow key={record.id} className={cn('group', interactiveCardClassName, 'hover:bg-muted/30')}>
+                    <TableCell className="py-4 pl-6">
+                      {record.qr_url ? (
+                        <div className="relative size-10 overflow-hidden rounded-lg border border-border/80 bg-card p-1 shadow-sm transition-transform group-hover:scale-110">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={record.qr_url}
+                            alt="QR"
+                            className="size-full object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex size-10 items-center justify-center rounded-lg border border-dashed border-border/80 bg-muted/20">
+                          <ShieldCheck className="size-4 text-muted-foreground/40" />
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <div className="font-semibold text-foreground/90">{record.name}</div>
+                      <div className="mt-0.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">ID: {record.id.slice(0, 8)}</div>
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <div className="text-sm font-medium">{record.bank_name}</div>
+                      <div className="mt-0.5 font-mono text-xs text-muted-foreground">{record.account_number}</div>
+                    </TableCell>
+                    <TableCell className="py-4 text-center text-xs font-bold">
+                      <span className="rounded-md border border-border/40 bg-muted/60 px-2 py-1">
+                        {record.currency}
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <Badge
+                        variant={record.is_active ? 'default' : 'outline'}
+                        className={record.is_active ? 'border-emerald-400/20 bg-emerald-400/15 text-emerald-700 shadow-none hover:bg-emerald-400/20 dark:text-emerald-300' : 'border-border/60 text-muted-foreground'}
+                      >
+                        {record.is_active ? 'Activo' : 'Inactivo'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="py-4 pr-6 text-right">
+                      <div className={tableActionClassName}>
+                        <PsavConfigDialogs actor={actor} onUpdated={onChangeRecord} record={record} />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   )
@@ -1427,6 +1870,8 @@ function GenericRecordsCard({
   records: Array<Record<string, unknown>>
   showHeader?: boolean
 }) {
+  const keys = records.length > 0 ? Object.keys(records[0]).filter(k => k !== 'id').slice(0, 5) : []
+
   return (
     <Card>
       {showHeader ? (
@@ -1435,20 +1880,69 @@ function GenericRecordsCard({
           <CardDescription>{description}</CardDescription>
         </CardHeader>
       ) : null}
-      <CardContent className="space-y-3">
-        {records.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border/70 p-6 text-sm text-muted-foreground">No hay registros disponibles.</div>
-        ) : (
-          records.map((record, index) => (
-            <div key={String(record.id ?? index)} className="rounded-xl border border-border/70 bg-muted/20 p-4">
-              <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                <Bell className="size-3.5" />
-                Registro {index + 1}
-              </div>
-              <pre className="overflow-x-auto text-xs leading-5 text-foreground/85">{JSON.stringify(record, null, 2)}</pre>
+      <CardContent>
+        {/* Móvil */}
+        <div className="space-y-3 md:hidden">
+          {records.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border/70 bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
+              No hay registros disponibles.
             </div>
-          ))
-        )}
+          ) : (
+            records.map((record, index) => (
+              <Card key={String(record.id ?? index)} className="border-border/70 bg-card/95 shadow-sm">
+                <CardContent className="space-y-4 p-4">
+                  <div className="flex items-center gap-2">
+                    <Bell className="size-4 text-muted-foreground" />
+                    <div className="font-medium text-foreground">Registro #{String(record.id ?? index).slice(0, 8)}</div>
+                  </div>
+                  <pre className="overflow-x-auto rounded-lg bg-muted/30 p-3 text-xs leading-5 text-foreground/85">
+                    {JSON.stringify(record, null, 2)}
+                  </pre>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+
+        {/* Desktop */}
+        <div className="hidden md:block">
+          {records.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border/70 bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
+              No hay registros disponibles.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ID</TableHead>
+                  {keys.map((key) => (
+                    <TableHead key={key} className="capitalize">{key.replace(/_/g, ' ')}</TableHead>
+                  ))}
+                  <TableHead className="text-right">Detalle Funcional</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {records.map((record, index) => (
+                  <TableRow key={String(record.id ?? index)}>
+                    <TableCell className="font-medium">#{String(record.id ?? index).slice(0, 8)}</TableCell>
+                    {keys.map((key) => {
+                      const val = record[key]
+                      const displayVal = typeof val === 'object' && val !== null ? '{...}' : String(val ?? '-')
+                      return (
+                        <TableCell key={key} className="max-w-[150px] truncate">
+                          {displayVal}
+                        </TableCell>
+                      )
+                    })}
+                    <TableCell className="text-right">
+                      <Badge variant="outline" className="text-[10px]">Pendiente Documentar</Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
       </CardContent>
     </Card>
   )
@@ -1479,10 +1973,10 @@ function TableFilters({
   const hasActiveFilters = query.trim().length > 0 || filters.some((filter) => filter.value !== 'all')
 
   return (
-    <div className="rounded-xl border border-border/70 bg-muted/15 p-4">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(auto-fit,minmax(180px,1fr))]">
-        <div className="space-y-2">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+    <div className="rounded-xl border border-border/70 bg-muted/15 p-4 overflow-hidden">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(auto-fit,minmax(140px,1fr))]">
+        <div className="space-y-2 min-w-0">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground truncate">
             Buscar
           </div>
           <Input
@@ -1493,12 +1987,12 @@ function TableFilters({
           />
         </div>
         {filters.map((filter) => (
-          <div key={filter.label} className="space-y-2">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+          <div key={filter.label} className="space-y-2 min-w-0">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground truncate">
               {filter.label}
             </div>
             <Select value={filter.value} onValueChange={(value) => filter.onChange(value ?? 'all')}>
-              <SelectTrigger className="h-10 min-w-[180px] border-border/70 bg-background/80">
+              <SelectTrigger className="h-10 w-full border-border/70 bg-background/80">
                 <SelectValue placeholder={filter.label} />
               </SelectTrigger>
               <SelectContent>

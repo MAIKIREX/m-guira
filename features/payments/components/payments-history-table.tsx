@@ -389,81 +389,121 @@ function StatusRail({ order }: { order: PaymentOrder }) {
   const currentIndex = FLOW_STAGES.findIndex((stage) => stage.key === order.status)
 
   return (
-    <div className="overflow-x-auto py-2">
-      <div className="flex min-w-max items-start justify-center gap-3 md:gap-4">
+    <div className="py-2">
+      {/* Mobile view: compact vertical list */}
+      <div className="flex flex-col gap-2 md:hidden">
         {FLOW_STAGES.map((stage, index) => {
           const isCurrent = stage.key === order.status
           const isReached = currentIndex >= index
           const isComplete = currentIndex > index
-          const lineFilled = currentIndex > index ? '100%' : '0%'
+          
+          if (!isReached && index > currentIndex + 1) return null; // Only show up to next step
 
           return (
-            <div
-              key={stage.key}
-              className={cn(
-                'relative flex min-w-[120px] flex-col items-center text-center sm:min-w-[132px] md:min-w-[144px]',
-                index < FLOW_STAGES.length - 1 && 'md:pr-4 lg:pr-6'
-              )}
-            >
-              <motion.div
-                animate={{
-                  backgroundColor: isCurrent
-                    ? 'rgba(34,211,238,0.18)'
-                    : isComplete
-                      ? 'rgba(16,185,129,0.18)'
-                      : 'rgba(255,255,255,0.04)',
-                  borderColor: isCurrent
-                    ? 'rgba(34,211,238,0.55)'
-                    : isComplete
-                      ? 'rgba(16,185,129,0.45)'
-                      : 'rgba(148,163,184,0.22)',
-                  scale: isCurrent ? 1.06 : 1,
-                  boxShadow: isCurrent ? '0 0 0 6px rgba(34,211,238,0.08)' : '0 0 0 0 rgba(0,0,0,0)',
-                }}
-                className="relative z-10 flex size-12 items-center justify-center rounded-full border text-sm font-semibold text-foreground"
-                initial={false}
-                transition={{ duration: 0.28, ease: 'easeOut' }}
-              >
-                <motion.span
-                  animate={{ opacity: isReached ? 1 : 0.7, y: isCurrent ? -0.5 : 0 }}
-                  initial={false}
-                  transition={{ duration: 0.2 }}
-                >
-                  {index + 1}
-                </motion.span>
-              </motion.div>
-
-              <motion.div
-                animate={{ opacity: isCurrent ? 1 : isReached ? 0.92 : 0.7, y: isCurrent ? 0 : 1 }}
-                className="mt-3 w-full px-1 text-center text-xs font-medium leading-4 text-foreground sm:text-sm"
-                initial={false}
-                transition={{ duration: 0.22 }}
-              >
-                {stage.label}
-              </motion.div>
-
-              <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                {isCurrent ? 'Etapa actual' : isReached ? 'Completada' : 'Pendiente'}
+            <div key={stage.key} className="flex items-center gap-3 rounded-2xl border border-border/40 bg-muted/5 p-3">
+              <div className={cn(
+                "flex size-8 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold transition-colors",
+                isCurrent 
+                  ? "border-cyan-400/50 bg-cyan-400/10 text-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.2)]" 
+                  : isReached 
+                    ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-400" 
+                    : "border-border/60 bg-muted/20 text-muted-foreground"
+              )}>
+                {index + 1}
               </div>
-
-              {index < FLOW_STAGES.length - 1 ? (
-                <div className="absolute left-[calc(50%+2rem)] top-6 hidden w-[calc(100%-4rem)] -translate-y-1/2 md:block">
-                  <div className="relative h-px w-full rounded-full bg-border/70">
-                    <motion.div
-                      animate={{ width: lineFilled }}
-                      className={cn(
-                        'absolute inset-y-0 left-0 rounded-full',
-                        isComplete ? 'bg-emerald-400' : 'bg-cyan-400'
-                      )}
-                      initial={false}
-                      transition={{ duration: 0.35, ease: 'easeInOut' }}
-                    />
-                  </div>
+              <div className="min-w-0 flex-1">
+                <div className={cn(
+                  "text-xs font-semibold",
+                  isCurrent ? "text-foreground" : "text-muted-foreground"
+                )}>
+                  {stage.label}
                 </div>
-              ) : null}
+                {isCurrent && (
+                  <div className="text-[10px] font-medium uppercase tracking-wider text-cyan-400/80">Etapa actual</div>
+                )}
+              </div>
             </div>
           )
         })}
+      </div>
+
+      {/* Desktop view: full horizontal rail */}
+      <div className="hidden md:block overflow-x-auto">
+        <div className="flex min-w-max items-start justify-center gap-3 md:gap-4">
+          {FLOW_STAGES.map((stage, index) => {
+            const isCurrent = stage.key === order.status
+            const isReached = currentIndex >= index
+            const isComplete = currentIndex > index
+            const lineFilled = currentIndex > index ? '100%' : '0%'
+
+            return (
+              <div
+                key={stage.key}
+                className={cn(
+                  'relative flex min-w-[120px] flex-col items-center text-center sm:min-w-[132px] md:min-w-[144px]',
+                  index < FLOW_STAGES.length - 1 && 'md:pr-4 lg:pr-6'
+                )}
+              >
+                <motion.div
+                  animate={{
+                    backgroundColor: isCurrent
+                      ? 'rgba(34,211,238,0.18)'
+                      : isComplete
+                        ? 'rgba(16,185,129,0.18)'
+                        : 'rgba(255,255,255,0.04)',
+                    borderColor: isCurrent
+                      ? 'rgba(34,211,238,0.55)'
+                      : isComplete
+                        ? 'rgba(16,185,129,0.45)'
+                        : 'rgba(148,163,184,0.22)',
+                    scale: isCurrent ? 1.06 : 1,
+                    boxShadow: isCurrent ? '0 0 0 6px rgba(34,211,238,0.08)' : '0 0 0 0 rgba(0,0,0,0)',
+                  }}
+                  className="relative z-10 flex size-12 items-center justify-center rounded-full border text-sm font-semibold text-foreground"
+                  initial={false}
+                  transition={{ duration: 0.28, ease: 'easeOut' }}
+                >
+                  <motion.span
+                    animate={{ opacity: isReached ? 1 : 0.7, y: isCurrent ? -0.5 : 0 }}
+                    initial={false}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {index + 1}
+                  </motion.span>
+                </motion.div>
+
+                <motion.div
+                  animate={{ opacity: isCurrent ? 1 : isReached ? 0.92 : 0.7, y: isCurrent ? 0 : 1 }}
+                  className="mt-3 w-full px-1 text-center text-xs font-medium leading-4 text-foreground sm:text-sm"
+                  initial={false}
+                  transition={{ duration: 0.22 }}
+                >
+                  {stage.label}
+                </motion.div>
+
+                <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                  {isCurrent ? 'Etapa actual' : isReached ? 'Completada' : 'Pendiente'}
+                </div>
+
+                {index < FLOW_STAGES.length - 1 ? (
+                  <div className="absolute left-[calc(50%+2rem)] top-6 hidden w-[calc(100%-4rem)] -translate-y-1/2 md:block">
+                    <div className="relative h-px w-full rounded-full bg-border/70">
+                      <motion.div
+                        animate={{ width: lineFilled }}
+                        className={cn(
+                          'absolute inset-y-0 left-0 rounded-full',
+                          isComplete ? 'bg-emerald-400' : 'bg-cyan-400'
+                        )}
+                        initial={false}
+                        transition={{ duration: 0.35, ease: 'easeInOut' }}
+                      />
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            )
+          })}
+        </div>
       </div>
     </div>
   )

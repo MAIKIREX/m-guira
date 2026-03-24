@@ -90,7 +90,7 @@ export function CreateUserDialog({ actor, onUpdated }: { actor: StaffActor; onUp
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={<Button size="sm" />}>Crear usuario</DialogTrigger>
-      <DialogContent>
+      <DialogContent className="w-[95vw] sm:w-full max-h-[92vh] overflow-y-auto p-6 md:p-8">
         <DialogHeader>
           <DialogTitle>Crear usuario</DialogTitle>
           <DialogDescription>
@@ -157,7 +157,7 @@ export function UserDetailDialog({ actor, onUpdated, user }: { actor: StaffActor
   return (
     <Dialog>
       <DialogTrigger render={<Button size="sm" variant="secondary" />}>Administrar</DialogTrigger>
-      <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
         <DialogHeader className="mb-2">
           <DialogTitle>Administrar Usuario</DialogTitle>
           <DialogDescription>Gestión de identidad y seguridad de acceso.</DialogDescription>
@@ -220,7 +220,7 @@ function ArchiveDeleteUserDialog({ action, actor, onUpdated, user }: { action: '
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={<Button size="sm" variant={action === 'delete' ? 'destructive' : 'outline'} />}>{action === 'archive' ? 'Archivar' : 'Eliminar'}</DialogTrigger>
-      <DialogContent>
+      <DialogContent className="w-[95vw] sm:w-full max-h-[92vh] overflow-y-auto p-6 md:p-8">
         <DialogHeader>
           <DialogTitle>{action === 'archive' ? 'Archivar usuario' : 'Eliminar usuario'}</DialogTitle>
           <DialogDescription>
@@ -266,7 +266,7 @@ function UnarchiveUserDialog({ actor, onUpdated, user }: { actor: StaffActor; on
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={<Button size="sm" variant="outline" />}>Desarchivar</DialogTrigger>
-      <DialogContent>
+      <DialogContent className="w-[95vw] sm:w-full max-h-[92vh] overflow-y-auto p-6 md:p-8">
         <DialogHeader>
           <DialogTitle>Desarchivar usuario</DialogTitle>
           <DialogDescription>Invoca \`admin-unarchive-user\` y deja trazabilidad local.</DialogDescription>
@@ -310,7 +310,7 @@ function ResetPasswordDialog({ actor, email, onUpdated }: { actor: StaffActor; e
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={<Button size="sm" variant="outline" />}>Reset password</DialogTrigger>
-      <DialogContent>
+      <DialogContent className="w-[95vw] sm:w-full max-h-[92vh] overflow-y-auto p-6 md:p-8">
         <DialogHeader>
           <DialogTitle>Resetear password</DialogTitle>
           <DialogDescription>Invoca \`admin-reset-password\` y dispara el recovery al email del usuario.</DialogDescription>
@@ -362,7 +362,7 @@ export function FeeConfigDialog({ actor, onUpdated, record }: { actor: StaffActo
       <DialogTrigger render={<Button size="sm" variant="ghost" className="h-8 px-2 border border-transparent bg-amber-500/8 text-amber-700 hover:bg-amber-500/14 hover:text-amber-800 dark:text-amber-300 dark:hover:text-amber-200 font-bold text-[10px] uppercase tracking-wider transition-all" />}>
         Editar
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[450px] gap-0 p-0 overflow-hidden border-border/40 shadow-2xl">
+      <DialogContent className="sm:max-w-[450px] w-[95vw] sm:w-full gap-0 p-0 max-h-[92vh] overflow-y-auto border-border/40 shadow-2xl">
         <div className="bg-amber-500/5 border-b border-amber-500/10 p-6 flex items-center gap-4">
           <div className="size-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-700 shadow-sm dark:text-amber-300">
             <CircleDollarSign className="size-6" />
@@ -375,10 +375,10 @@ export function FeeConfigDialog({ actor, onUpdated, record }: { actor: StaffActo
           </div>
         </div>
 
-        <div className="p-6 md:p-8">
+        <div className="p-5 md:p-8">
           <Form {...form}>
             <form className="space-y-6" onSubmit={form.handleSubmit(submit)}>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField control={form.control} name="value" render={({ field }) => (
                   <FormItem className="space-y-1.5">
                     <FormLabel className="text-[13px] font-semibold text-foreground/80">Valor Numérico</FormLabel>
@@ -456,14 +456,14 @@ export function AppSettingDialog({ actor, onUpdated, record }: { actor: StaffAct
       <DialogTrigger render={<Button size="sm" variant="ghost" className="h-8 px-2 border border-transparent bg-cyan-500/8 text-sky-700 hover:bg-cyan-500/14 hover:text-sky-800 dark:text-cyan-300 dark:hover:text-cyan-200 font-bold text-[10px] uppercase tracking-wider transition-all" />}>
         Configurar
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[550px] gap-0 p-0 overflow-hidden border-border/40 shadow-2xl">
+      <DialogContent className="sm:max-w-[550px] w-[95vw] sm:w-full gap-0 p-0 max-h-[92vh] overflow-y-auto border-border/40 shadow-2xl">
         <div className="bg-cyan-400/5 border-b border-cyan-400/10 p-6 flex items-center gap-4">
           <div className="size-12 rounded-2xl bg-cyan-400/10 flex items-center justify-center text-sky-700 shadow-sm dark:text-cyan-300">
             <ShieldCheck className="size-6" />
           </div>
           <div className="space-y-0.5">
             <DialogTitle className="text-lg font-bold">Variable de Entorno</DialogTitle>
-            <DialogDescription className="text-xs text-sky-700/80 font-mono font-bold uppercase dark:text-cyan-300/80">
+            <DialogDescription className="text-xs text-sky-700/80 font-mono font-bold uppercase break-all dark:text-cyan-300/80">
               {String(record.key ?? record.name ?? 'CONFIG_VAR')}
             </DialogDescription>
           </div>
@@ -474,7 +474,7 @@ export function AppSettingDialog({ actor, onUpdated, record }: { actor: StaffAct
           </div>
         </div>
 
-        <div className="p-6 md:p-8">
+        <div className="p-5 md:p-8">
           <Form {...form}>
             <form className="space-y-6" onSubmit={form.handleSubmit(submit)}>
               <FormField control={form.control} name="value" render={({ field }) => (
@@ -600,15 +600,15 @@ function PsavUpsertDialog({ actor, label, onUpdated, record }: { actor: StaffAct
       <DialogTrigger render={<Button size="sm" variant={record ? "ghost" : "default"} className={record ? "h-8 px-2 hover:bg-muted font-medium text-xs shadow-none border-none" : "h-9 px-4 font-semibold shadow-sm transition-all hover:scale-[1.02]"} />}>
         {label}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[700px] gap-0 p-0 overflow-hidden border-border/40 shadow-2xl">
-        <div className="grid md:grid-cols-[1fr_260px]">
+      <DialogContent className="sm:max-w-[700px] w-[95vw] sm:w-full gap-0 p-0 max-h-[92vh] overflow-y-auto border-border/40 shadow-2xl">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_260px]">
           {/* Form Side */}
-          <div className="p-6 md:p-8 space-y-6">
+          <div className="p-5 md:p-8 space-y-6">
             <DialogHeader className="space-y-1">
               <DialogTitle className="text-xl font-bold tracking-tight">
                 {record ? 'Refinar Configuración PSAV' : 'Nuevo Canal de Pago'}
               </DialogTitle>
-              <DialogDescription className="text-sm">
+              <DialogDescription className="text-sm break-words">
                 Define los detalles del banco y el código QR para depósitos directos.
               </DialogDescription>
             </DialogHeader>
@@ -691,10 +691,10 @@ function PsavUpsertDialog({ actor, label, onUpdated, record }: { actor: StaffAct
           </div>
 
           {/* Preview Side */}
-          <div className="bg-muted/40 border-l border-border/40 p-6 flex flex-col items-center space-y-6">
+          <div className="bg-muted/40 border-t md:border-t-0 md:border-l border-border/40 p-6 pb-8 md:pb-6 flex flex-col items-center space-y-6">
             <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground w-full text-center">Previsualización</div>
             
-            <div className="w-full aspect-square rounded-2xl bg-card shadow-xl shadow-black/10 border border-border/50 flex flex-col items-center justify-center p-6 space-y-4 relative overflow-hidden group">
+            <div className="w-full max-w-[240px] md:max-w-none aspect-square rounded-2xl bg-card shadow-xl shadow-black/10 border border-border/50 flex flex-col items-center justify-center p-6 space-y-4 relative overflow-hidden group mx-auto">
               <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400/50 via-cyan-400/50 to-violet-400/50" />
               
               {previewUrl ? (
@@ -776,8 +776,8 @@ function PsavDeleteDialog({ actor, onUpdated, record }: { actor: StaffActor; onU
       <DialogTrigger render={<Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-all" />}>
         <Trash2 className="size-4" />
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md gap-0 p-0 overflow-hidden border-destructive/20 shadow-2xl">
-        <div className="p-6 md:p-8 flex flex-col items-center text-center space-y-4">
+      <DialogContent className="sm:max-w-md w-[95vw] sm:w-full gap-0 p-0 max-h-[92vh] overflow-y-auto border-destructive/20 shadow-2xl">
+        <div className="p-5 md:p-8 flex flex-col items-center text-center space-y-4">
           <div className="size-16 rounded-full bg-destructive/10 flex items-center justify-center mb-2">
             <AlertTriangle className="size-8 text-destructive" />
           </div>
@@ -785,7 +785,7 @@ function PsavDeleteDialog({ actor, onUpdated, record }: { actor: StaffActor; onU
           <DialogHeader className="space-y-2">
             <DialogTitle className="text-xl font-bold tracking-tight text-destructive">¿Eliminar este canal?</DialogTitle>
             <DialogDescription className="text-sm">
-              Esta acción es irreversible. El canal <span className="font-semibold text-foreground">&quot;{record.name}&quot;</span> dejará de estar disponible para todos los usuarios.
+              Esta acción es irreversible. El canal <span className="font-semibold text-foreground break-all">&quot;{record.name}&quot;</span> dejará de estar disponible para todos los usuarios.
             </DialogDescription>
           </DialogHeader>
 

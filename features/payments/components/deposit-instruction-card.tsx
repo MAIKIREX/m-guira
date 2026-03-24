@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Copy, FlipHorizontal2, Landmark } from 'lucide-react'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -53,27 +54,36 @@ export function DepositInstructionCard({ instruction }: { instruction: DepositIn
   }
 
   return (
-    <div className="relative h-[280px] [perspective:1400px]">
-      <div className="relative h-full">
+    <div className="relative group [perspective:1400px]">
+      <div className="relative">
         <motion.div
           animate={{ rotateY: isFlipped ? 180 : 0 }}
-          className="relative h-full w-full"
+          className="relative w-full overflow-hidden rounded-[28px] md:overflow-visible transition-colors"
           style={{ transformStyle: 'preserve-3d' }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         >
+          {/* Front Face */}
           <div
-            className={getInstructionFrontClass(instruction)}
-            style={{ backfaceVisibility: 'hidden' }}
+            className={cn(
+              getInstructionFrontClass(instruction),
+              "md:absolute md:inset-0 min-h-[320px] md:min-h-0"
+            )}
+            style={{ 
+              backfaceVisibility: 'hidden',
+              position: isFlipped ? 'absolute' : 'relative',
+              opacity: isFlipped ? 0 : 1,
+              pointerEvents: isFlipped ? 'none' : 'auto'
+            }}
           >
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.22),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(250,204,21,0.18),transparent_28%)]" />
             <div className="relative flex h-full flex-col">
               <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="text-[11px] uppercase tracking-[0.28em] text-cyan-100/75">{getInstructionEyebrow(instruction)}</div>
-                  <div className="mt-2 text-lg font-semibold tracking-[0.02em]">{instruction.title}</div>
+                <div className="min-w-0">
+                  <div className="text-[10px] sm:text-[11px] uppercase tracking-[0.24em] text-cyan-100/75 truncate">{getInstructionEyebrow(instruction)}</div>
+                  <div className="mt-1 sm:mt-2 text-base sm:text-lg font-semibold tracking-[0.02em]">{instruction.title}</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-cyan-50/80">
+                <div className="flex shrink-0 items-center gap-2">
+                  <div className="hidden sm:block rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-cyan-50/80">
                     {getInstructionBadge(instruction)}
                   </div>
                   <Button
@@ -89,10 +99,10 @@ export function DepositInstructionCard({ instruction }: { instruction: DepositIn
                 </div>
               </div>
 
-              <div className="mt-8">
-                <div className="text-[11px] uppercase tracking-[0.24em] text-cyan-100/65">{getInstructionPrimaryLabel(instruction)}</div>
+              <div className="mt-6 sm:mt-8">
+                <div className="text-[10px] sm:text-[11px] uppercase tracking-[0.22em] text-cyan-100/65">{getInstructionPrimaryLabel(instruction)}</div>
                 <div className="mt-2 flex items-start justify-between gap-3">
-                  <div className="min-w-0 font-mono text-2xl tracking-[0.14em] text-white">
+                  <div className="min-w-0 break-all font-mono text-xl sm:text-2xl tracking-[0.1em] text-white">
                     {visiblePrimaryValue}
                   </div>
                   <Button
@@ -109,12 +119,12 @@ export function DepositInstructionCard({ instruction }: { instruction: DepositIn
               </div>
 
               {frontRows.length > 0 || instruction.qrUrl ? (
-                <div className="mt-6 grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
-                  <div className="grid gap-4 sm:grid-cols-2">
+                <div className="mt-6 flex flex-col gap-4 sm:grid sm:grid-cols-[1fr_auto] sm:items-end">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {frontRows.map((row) => (
-                      <div key={row.label}>
-                        <div className="text-[11px] uppercase tracking-[0.22em] text-cyan-100/65">{row.label}</div>
-                        <div className="mt-2 text-sm font-medium text-cyan-50">{row.value}</div>
+                      <div key={row.label} className="min-w-0">
+                        <div className="text-[10px] uppercase tracking-[0.2em] text-cyan-100/65">{row.label}</div>
+                        <div className="mt-1 text-sm font-medium text-cyan-50 truncate">{row.value}</div>
                       </div>
                     ))}
                   </div>
@@ -122,12 +132,8 @@ export function DepositInstructionCard({ instruction }: { instruction: DepositIn
                   {instruction.qrUrl ? (
                     <Dialog>
                       <DialogTrigger
-                        render={
-                          <button
-                            className="mx-auto flex size-[88px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/15 bg-white p-2 shadow-[0_10px_24px_-16px_rgba(255,255,255,0.7)] transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:mx-0"
-                            type="button"
-                          />
-                        }
+                        className="flex size-[72px] sm:size-[88px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/15 bg-white p-2 shadow-[0_10px_24px_-16px_rgba(255,255,255,0.7)] transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                        type="button"
                       >
                         <Image
                           src={instruction.qrUrl}
@@ -161,15 +167,24 @@ export function DepositInstructionCard({ instruction }: { instruction: DepositIn
                 </div>
               ) : null}
 
-              <div className="mt-auto pt-5 text-xs text-cyan-100/72">
+              <div className="mt-auto pt-5 text-[11px] leading-relaxed text-cyan-100/72 sm:text-xs">
                 {getInstructionFooter(instruction)}
               </div>
             </div>
           </div>
 
+          {/* Back Face */}
           <div
-            className="absolute inset-0 overflow-hidden rounded-[28px] border border-violet-400/30 bg-[linear-gradient(150deg,#0b1020_0%,#151c35_45%,#26104c_100%)] p-6 text-white shadow-[0_24px_60px_-28px_rgba(8,25,49,0.75)]"
-            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+            className={cn(
+              "md:absolute md:inset-0 min-h-[320px] md:min-h-0 overflow-hidden rounded-[28px] border border-violet-400/30 bg-[linear-gradient(150deg,#0b1020_0%,#151c35_45%,#26104c_100%)] p-6 text-white shadow-[0_24px_60px_-28px_rgba(8,25,49,0.75)]",
+              !isFlipped && "opacity-0 pointer-events-none md:pointer-events-auto"
+            )}
+            style={{ 
+              backfaceVisibility: 'hidden', 
+              transform: 'rotateY(180deg)',
+              position: isFlipped ? 'relative' : 'absolute',
+              opacity: isFlipped ? 1 : 0
+            }}
           >
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.14),transparent_40%),linear-gradient(135deg,transparent_0%,rgba(255,255,255,0.06)_48%,transparent_100%)]" />
             <div className="relative flex h-full flex-col justify-between">
@@ -190,14 +205,15 @@ export function DepositInstructionCard({ instruction }: { instruction: DepositIn
               </div>
 
               <div className="flex flex-1 items-center justify-center py-6">
-                <Image
-                  src="/logo.png"
-                  alt="Guira"
-                  width={172}
-                  height={56}
-                  className="h-auto w-[100px] object-contain"
-                  unoptimized
-                />
+                <div className="relative h-14 w-[100px]">
+                  <Image
+                    src="/logo.png"
+                    alt="Guira"
+                    fill
+                    className="object-contain"
+                    unoptimized
+                  />
+                </div>
               </div>
 
               <div className="space-y-3">
