@@ -1321,10 +1321,10 @@ function SelectionCard({
     <button
       aria-pressed={isSelected}
       className={cn(
-        'rounded-xl border px-3 py-3 sm:px-4 sm:py-4 text-left transition-all duration-200',
+        'group rounded-xl border px-4 py-4 text-left transition-all duration-300',
         isSelected
-          ? 'border-primary/35 bg-primary/5 shadow-sm'
-          : 'border-border/50 bg-transparent',
+          ? 'border-primary/40 bg-primary/8 shadow-[0_0_12px_rgba(var(--primary-rgb),0.06)]'
+          : 'border-border/50 bg-transparent hover:border-border/80 hover:bg-muted/5',
         !disabled && interactiveClickableCardClassName,
         disabled && 'cursor-not-allowed opacity-60'
       )}
@@ -1332,18 +1332,23 @@ function SelectionCard({
       onClick={onClick}
       type="button"
     >
-      <div className="flex flex-row items-center gap-3 sm:flex-col sm:items-start">
+      <div className="flex items-center gap-4">
         <div className={cn(
-          'flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors',
+          'flex size-10 shrink-0 items-center justify-center rounded-xl transition-all duration-300',
           isSelected 
-            ? 'border-primary/25 bg-primary/8 text-primary' 
-            : 'border-border/60 bg-muted/15 text-muted-foreground'
+            ? 'bg-primary/15 text-primary scale-110' 
+            : 'bg-muted/20 text-muted-foreground group-hover:bg-muted/30 group-hover:text-foreground'
         )}>
-          <Icon className="size-4" />
+          <Icon className="size-5" />
         </div>
-        <div className="min-w-0">
-          <div className="text-sm font-semibold tracking-[0.01em] text-foreground">{title}</div>
-          <div className="mt-0.5 line-clamp-2 text-[11px] sm:text-xs leading-relaxed tracking-[0.01em] text-muted-foreground sm:mt-1">
+        <div className="min-w-0 flex-1">
+          <div className={cn(
+            "text-sm font-semibold tracking-tight transition-colors",
+            isSelected ? "text-foreground" : "text-foreground/90"
+          )}>
+            {title}
+          </div>
+          <div className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
             {description}
           </div>
         </div>

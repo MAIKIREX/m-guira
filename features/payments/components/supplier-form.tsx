@@ -538,11 +538,11 @@ export function SupplierForm({
                     )}
                   />
 
-                  <div className="flex items-center justify-between border-t border-border/60 pt-4">
-                    <div className="text-sm text-muted-foreground">Primero definimos los datos base del proveedor y la primera cuenta a registrar.</div>
-                    <div className="flex gap-2">
-                      <Button disabled={disabled} onClick={onBack} type="button" variant="outline">Cancelar</Button>
-                      <Button disabled={disabled} onClick={handleNextStep} type="button">Siguiente<ArrowRight /></Button>
+                  <div className="flex flex-col-reverse items-center justify-between gap-4 border-t border-border/60 pt-6 md:flex-row md:pt-4">
+                    <div className="text-center text-sm text-muted-foreground md:text-left">Primero definimos los datos base del proveedor y la primera cuenta a registrar.</div>
+                    <div className="flex w-full gap-2 md:w-auto">
+                      <Button className="w-full md:w-auto" disabled={disabled} onClick={onBack} type="button" variant="outline">Cancelar</Button>
+                      <Button className="w-full md:w-auto" disabled={disabled} onClick={handleNextStep} type="button">Siguiente<ArrowRight className="ml-2 size-4" /></Button>
                     </div>
                   </div>
                 </AnimatedStepPanel>
@@ -657,13 +657,13 @@ export function SupplierForm({
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between border-t border-border/60 pt-4">
-                    <div className="text-sm text-muted-foreground">
+                  <div className="flex flex-col-reverse items-center justify-between gap-4 border-t border-border/60 pt-6 md:flex-row md:pt-4">
+                    <div className="text-center text-sm text-muted-foreground md:text-left">
                       {remainingMethods.length > 0 ? 'Puedes guardar ahora o agregar otra cuenta antes de finalizar.' : 'Ya registraste todas las cuentas disponibles para este proveedor.'}
                     </div>
-                    <div className="flex gap-2">
-                      <Button disabled={disabled} onClick={() => setCurrentStep('general')} type="button" variant="outline"><ArrowLeft />Atras</Button>
-                      <Button disabled={disabled || form.formState.isSubmitting} type="submit">
+                    <div className="flex w-full gap-2 md:w-auto">
+                      <Button className="w-full md:w-auto" disabled={disabled} onClick={() => setCurrentStep('general')} type="button" variant="outline"><ArrowLeft className="mr-2 size-4" />Atras</Button>
+                      <Button className="w-full md:w-auto" disabled={disabled || form.formState.isSubmitting} type="submit">
                         {form.formState.isSubmitting ? 'Guardando...' : editingSupplier ? 'Guardar cambios' : 'Guardar proveedor'}
                       </Button>
                     </div>

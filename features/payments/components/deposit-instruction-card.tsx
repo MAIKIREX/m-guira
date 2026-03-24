@@ -53,12 +53,18 @@ export function DepositInstructionCard({ instruction }: { instruction: DepositIn
     }
   }
 
+  const displayValue = visiblePrimaryValue.length > 18 
+    ? `${visiblePrimaryValue.slice(0, 14)}...` 
+    : visiblePrimaryValue
+
+  const cardBaseBg = "bg-[linear-gradient(150deg,#0b1020_0%,#151c35_45%,#26104c_100%)]"
+
   return (
-    <div className="relative group [perspective:1400px]">
-      <div className="relative">
+    <div className="relative group [perspective:1400px] h-[260px] sm:h-[280px]">
+      <div className="relative h-full">
         <motion.div
           animate={{ rotateY: isFlipped ? 180 : 0 }}
-          className="relative w-full overflow-hidden rounded-[28px] md:overflow-visible transition-colors"
+          className="relative h-full w-full"
           style={{ transformStyle: 'preserve-3d' }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         >
@@ -66,29 +72,29 @@ export function DepositInstructionCard({ instruction }: { instruction: DepositIn
           <div
             className={cn(
               getInstructionFrontClass(instruction),
-              "md:absolute md:inset-0 min-h-[320px] md:min-h-0"
+              "absolute inset-0 h-full w-full",
+              cardBaseBg
             )}
             style={{ 
               backfaceVisibility: 'hidden',
-              position: isFlipped ? 'absolute' : 'relative',
               opacity: isFlipped ? 0 : 1,
               pointerEvents: isFlipped ? 'none' : 'auto'
             }}
           >
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.22),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(250,204,21,0.18),transparent_28%)]" />
-            <div className="relative flex h-full flex-col">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(250,204,21,0.12),transparent_35%)]" />
+            <div className="relative flex h-full flex-col p-6 sm:p-7">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <div className="text-[10px] sm:text-[11px] uppercase tracking-[0.24em] text-cyan-100/75 truncate">{getInstructionEyebrow(instruction)}</div>
-                  <div className="mt-1 sm:mt-2 text-base sm:text-lg font-semibold tracking-[0.02em]">{instruction.title}</div>
+                  <div className="text-[10px] uppercase tracking-[0.24em] text-cyan-100/75 truncate">{getInstructionEyebrow(instruction)}</div>
+                  <div className="mt-1.5 text-base sm:text-lg font-semibold tracking-[0.02em]">{instruction.title}</div>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <div className="hidden sm:block rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-cyan-50/80">
+                  <div className="hidden sm:block rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-cyan-50/70">
                     {getInstructionBadge(instruction)}
                   </div>
                   <Button
                     aria-label="Voltear tarjeta"
-                    className="rounded-full border border-white/15 bg-white/10 text-white backdrop-blur-sm hover:bg-white/18 hover:text-white"
+                    className="rounded-full border border-white/10 bg-white/5 text-white backdrop-blur-sm hover:bg-white/15 hover:text-white"
                     onClick={() => setIsFlipped(true)}
                     size="icon-sm"
                     type="button"
@@ -100,14 +106,14 @@ export function DepositInstructionCard({ instruction }: { instruction: DepositIn
               </div>
 
               <div className="mt-6 sm:mt-8">
-                <div className="text-[10px] sm:text-[11px] uppercase tracking-[0.22em] text-cyan-100/65">{getInstructionPrimaryLabel(instruction)}</div>
-                <div className="mt-2 flex items-start justify-between gap-3">
-                  <div className="min-w-0 break-all font-mono text-xl sm:text-2xl tracking-[0.1em] text-white">
-                    {visiblePrimaryValue}
+                <div className="text-[10px] uppercase tracking-[0.22em] text-cyan-100/60">{getInstructionPrimaryLabel(instruction)}</div>
+                <div className="mt-2 flex items-center justify-between gap-3">
+                  <div className="min-w-0 font-mono text-xl sm:text-2xl tracking-[0.08em] text-white">
+                    {displayValue}
                   </div>
                   <Button
                     aria-label="Copiar valor"
-                    className="shrink-0 rounded-full border border-white/15 bg-white/10 text-white backdrop-blur-sm hover:bg-white/18 hover:text-white"
+                    className="shrink-0 rounded-full border border-white/10 bg-white/5 text-white backdrop-blur-sm hover:bg-white/15 hover:text-white"
                     onClick={handleCopyPrimaryValue}
                     size="icon-sm"
                     type="button"
@@ -119,12 +125,12 @@ export function DepositInstructionCard({ instruction }: { instruction: DepositIn
               </div>
 
               {frontRows.length > 0 || instruction.qrUrl ? (
-                <div className="mt-6 flex flex-col gap-4 sm:grid sm:grid-cols-[1fr_auto] sm:items-end">
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="mt-auto flex items-end justify-between gap-4 pt-4">
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-3 min-w-0">
                     {frontRows.map((row) => (
                       <div key={row.label} className="min-w-0">
-                        <div className="text-[10px] uppercase tracking-[0.2em] text-cyan-100/65">{row.label}</div>
-                        <div className="mt-1 text-sm font-medium text-cyan-50 truncate">{row.value}</div>
+                        <div className="text-[9px] uppercase tracking-[0.18em] text-cyan-100/55">{row.label}</div>
+                        <div className="mt-0.5 text-[13px] font-medium text-cyan-50 truncate">{row.value}</div>
                       </div>
                     ))}
                   </div>
@@ -132,14 +138,14 @@ export function DepositInstructionCard({ instruction }: { instruction: DepositIn
                   {instruction.qrUrl ? (
                     <Dialog>
                       <DialogTrigger
-                        className="flex size-[72px] sm:size-[88px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/15 bg-white p-2 shadow-[0_10px_24px_-16px_rgba(255,255,255,0.7)] transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                        className="flex size-[64px] sm:size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white p-1.5 shadow-[0_8px_16px_-8px_rgba(255,255,255,0.4)] transition-transform hover:scale-[1.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
                         type="button"
                       >
                         <Image
                           src={instruction.qrUrl}
                           alt={`QR ${instruction.title}`}
-                          width={176}
-                          height={176}
+                          width={144}
+                          height={144}
                           className="h-full w-full object-contain"
                           unoptimized
                         />
@@ -165,35 +171,35 @@ export function DepositInstructionCard({ instruction }: { instruction: DepositIn
                     </Dialog>
                   ) : null}
                 </div>
-              ) : null}
-
-              <div className="mt-auto pt-5 text-[11px] leading-relaxed text-cyan-100/72 sm:text-xs">
-                {getInstructionFooter(instruction)}
-              </div>
+              ) : (
+                <div className="mt-auto pt-4 text-[11px] leading-relaxed text-cyan-100/65">
+                  {getInstructionFooter(instruction)}
+                </div>
+              )}
             </div>
           </div>
 
           {/* Back Face */}
           <div
             className={cn(
-              "md:absolute md:inset-0 min-h-[320px] md:min-h-0 overflow-hidden rounded-[28px] border border-violet-400/30 bg-[linear-gradient(150deg,#0b1020_0%,#151c35_45%,#26104c_100%)] p-6 text-white shadow-[0_24px_60px_-28px_rgba(8,25,49,0.75)]",
-              !isFlipped && "opacity-0 pointer-events-none md:pointer-events-auto"
+              "absolute inset-0 h-full w-full overflow-hidden rounded-[28px] border border-violet-400/20 p-6 sm:p-7 text-white shadow-[0_24px_50px_-20px_rgba(0,0,0,0.5)]",
+              cardBaseBg,
+              !isFlipped && "opacity-0 pointer-events-none"
             )}
             style={{ 
               backfaceVisibility: 'hidden', 
               transform: 'rotateY(180deg)',
-              position: isFlipped ? 'relative' : 'absolute',
               opacity: isFlipped ? 1 : 0
             }}
           >
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.14),transparent_40%),linear-gradient(135deg,transparent_0%,rgba(255,255,255,0.06)_48%,transparent_100%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_40%)]" />
             <div className="relative flex h-full flex-col justify-between">
               <div className="flex items-center justify-between">
-                <div className="text-[11px] uppercase tracking-[0.3em] text-violet-100/70">Guira</div>
+                <div className="text-[10px] uppercase tracking-[0.3em] text-violet-100/60">Guira Finance</div>
                 <div className="flex items-center gap-2">
                   <Button
                     aria-label="Volver al frente"
-                    className="rounded-full border border-white/15 bg-white/10 text-white backdrop-blur-sm hover:bg-white/18 hover:text-white"
+                    className="rounded-full border border-white/10 bg-white/5 text-white backdrop-blur-sm hover:bg-white/15 hover:text-white"
                     onClick={() => setIsFlipped(false)}
                     size="icon-sm"
                     type="button"
@@ -205,7 +211,7 @@ export function DepositInstructionCard({ instruction }: { instruction: DepositIn
               </div>
 
               <div className="flex flex-1 items-center justify-center py-6">
-                <div className="relative h-14 w-[100px]">
+                <div className="relative h-12 w-[90px] opacity-80">
                   <Image
                     src="/logo.png"
                     alt="Guira"
@@ -217,8 +223,8 @@ export function DepositInstructionCard({ instruction }: { instruction: DepositIn
               </div>
 
               <div className="space-y-3">
-                <div className="text-center text-xs text-violet-100/72">
-                  Medio de fondeo validado por Guira para este expediente.
+                <div className="text-center text-[11px] leading-relaxed text-violet-100/60">
+                  Operación validada y asegurada por el protocolo de cumplimiento de Guira.
                 </div>
               </div>
             </div>

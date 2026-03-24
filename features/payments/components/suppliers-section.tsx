@@ -173,31 +173,31 @@ export function SuppliersSection({
                         interactiveCardClassName
                       )}
                     >
-                      <div className="flex items-start gap-4">
-                        <div className="flex size-11 items-center justify-center rounded-2xl border border-border/70 bg-muted/30">
+                      <div className="flex items-start gap-4 min-w-0 w-full md:w-auto">
+                        <div className="flex size-11 flex-shrink-0 items-center justify-center rounded-2xl border border-border/70 bg-muted/30">
                           <UserRound className="size-5 text-muted-foreground" />
                         </div>
-                        <div className="flex gap-2">
-                          <div>
-                            <div className="text-xl font-semibold">{supplier.name}</div>
+                        <div className="flex min-w-0 flex-col gap-3 md:flex-row md:gap-8 md:items-center">
+                          <div className="min-w-0">
+                            <div className="truncate text-xl font-semibold">{supplier.name}</div>
                             <div className="text-sm text-muted-foreground">{methods.length} cuenta{methods.length === 1 ? '' : 's'}</div>
                           </div>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-2 shrink-0">
                             {methods.map((method) => (
                               <Badge key={`${supplier.id}-${method}`} variant="outline">
                                 {method === 'ach' ? 'ACH' : method === 'swift' ? 'SWIFT' : 'CRYPTO'}
                               </Badge>
                             ))}
                           </div>
-                          <div className="grid gap-1 text-sm text-muted-foreground">
-                            <div>{supplier.country}</div>
-                            <div>{supplier.email}</div>
-                            <div>{supplier.phone}</div>
+                          <div className="grid min-w-0 gap-1 text-sm text-muted-foreground md:border-l md:border-border/50 md:pl-8">
+                            <div className="truncate">{supplier.country}</div>
+                            <div className="truncate">{supplier.email}</div>
+                            <div className="truncate">{supplier.phone}</div>
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 self-end md:self-center">
+                      <div className="mt-2 flex items-center justify-end gap-2 md:mt-0">
                         <Button
                           className="text-muted-foreground hover:bg-primary/10 hover:text-primary cursor-pointer"
                           disabled={disabled}
